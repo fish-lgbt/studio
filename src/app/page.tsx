@@ -1,7 +1,9 @@
+import { ScreenshotTool } from './components/screenshot-tool';
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      Test
+    <main className="flex flex-col gap-2">
+      <ScreenshotTool />
     </main>
   );
 }

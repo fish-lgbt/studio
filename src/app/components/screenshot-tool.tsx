@@ -76,7 +76,7 @@ const draw = (
   /**
    * Default background colour is white
    */
-  backgroundColor: string = '#FFFFFF',
+  backgroundColor: string,
 ) => {
   const ctx = canvas?.getContext('2d');
 
@@ -131,16 +131,19 @@ export const ScreenshotTool = () => {
     setBackgroundColour(color);
   };
 
-  const onDrop = useCallback((file: File[]) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const onDrop = useCallback(
+    (file: File[]) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-    loadImage(URL.createObjectURL(file[0])).then((loadedImage) => {
-      setImage(loadedImage);
-      position.current = { x: (canvas.width - loadedImage.width) / 2, y: (canvas.height - loadedImage.height) / 2 };
-      draw(canvas, loadedImage, position.current);
-    });
-  }, []);
+      loadImage(URL.createObjectURL(file[0])).then((loadedImage) => {
+        setImage(loadedImage);
+        position.current = { x: (canvas.width - loadedImage.width) / 2, y: (canvas.height - loadedImage.height) / 2 };
+        draw(canvas, loadedImage, position.current, backgroundColour);
+      });
+    },
+    [backgroundColour],
+  );
 
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
     if (canvasRef.current) {
@@ -182,10 +185,10 @@ export const ScreenshotTool = () => {
         position.current = { x: adjustedX, y: adjustedY };
 
         // Redraw the canvas with the new image position
-        draw(canvasRef.current, image, position.current);
+        draw(canvasRef.current, image, position.current, backgroundColour);
       }
     },
-    [image],
+    [image, backgroundColour],
   );
 
   // Reset the dragging flag when the mouse is released

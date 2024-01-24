@@ -1,58 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
+import { Dropzone } from './dropzone';
+import { DownloadCanvasButton } from './download-canvas-button';
+import { BackgroundColourPicker } from './background-colour-picker';
 
-type DropzoneProps = {
+export type DropzoneProps = {
   onDrop: (acceptedFiles: File[]) => void;
 };
 
-/**
- * User can drag and drop an image to the canvas
- */
-const Dropzone = ({ onDrop }: DropzoneProps) => {
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
-
-  return (
-    <div
-      {...getRootProps()}
-      className="border-dashed border-4 border-gray-200 rounded-lg p-4 cursor-pointer text-center hover:border-gray-300"
-    >
-      <input {...getInputProps()} />
-      {isDragActive ? (
-        <p className="text-gray-500">Drop the files here ...</p>
-      ) : (
-        <p className="text-gray-500">{"Drag 'n' drop some files here, or click to select files"}</p>
-      )}
-    </div>
-  );
-};
-
-type DownloadCanvasButtonProps = {
+export type DownloadCanvasButtonProps = {
   canvasRef: React.RefObject<HTMLCanvasElement>;
-};
-
-/**
- * User can download the canvas as a PNG file
- */
-const DownloadCanvasButton = ({ canvasRef }: DownloadCanvasButtonProps) => {
-  const handleDownload = () => {
-    if (canvasRef.current) {
-      const image = canvasRef.current.toDataURL('image/png').replace('image/png', 'image/octet-stream');
-      const link = document.createElement('a');
-      link.download = 'canvas-image.png';
-      link.href = image;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
-  return (
-    <button onClick={handleDownload} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-      Download PNG
-    </button>
-  );
 };
 
 const loadImage = (src: string) => {
@@ -70,7 +28,7 @@ type Coordinates = {
 };
 
 const draw = (
-  canvas: HTMLCanvasElement,
+  canvas: HTMLCanvasElement | null,
   image: CanvasImageSource | null,
   position: Coordinates,
   /**
@@ -97,26 +55,9 @@ const draw = (
   ctx.drawImage(image, position.x, position.y);
 };
 
-type BackgroundColourPickerProps = {
+export type BackgroundColourPickerProps = {
   backgroundColour: string;
   onChangeBackgroundColour: (color: string) => void;
-};
-
-const BackgroundColourPicker = ({ backgroundColour, onChangeBackgroundColour }: BackgroundColourPickerProps) => {
-  return (
-    <div className="absolute top-0 left-0 p-2">
-      <div className="flex items-center gap-2">
-        <label htmlFor="background-colour">Background Colour</label>
-        <input
-          id="background-colour"
-          type="color"
-          value={backgroundColour}
-          onChange={(event) => onChangeBackgroundColour(event.target.value)}
-          className="border border-gray-200 rounded-md"
-        />
-      </div>
-    </div>
-  );
 };
 
 export const ScreenshotTool = () => {
@@ -126,24 +67,21 @@ export const ScreenshotTool = () => {
   const isDragging = useRef(false);
   const dragStart = useRef<Coordinates>({ x: 0, y: 0 });
   const position = useRef<Coordinates>({ x: 0, y: 0 });
+  const requestRef = useRef<number | null>(null);
 
   const handleChangeBackground = (color: string) => {
     setBackgroundColour(color);
   };
 
-  const onDrop = useCallback(
-    (file: File[]) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+  const onDrop = useCallback((file: File[]) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-      loadImage(URL.createObjectURL(file[0])).then((loadedImage) => {
-        setImage(loadedImage);
-        position.current = { x: (canvas.width - loadedImage.width) / 2, y: (canvas.height - loadedImage.height) / 2 };
-        draw(canvas, loadedImage, position.current, backgroundColour);
-      });
-    },
-    [backgroundColour],
-  );
+    loadImage(URL.createObjectURL(file[0])).then((loadedImage) => {
+      setImage(loadedImage);
+      position.current = { x: (canvas.width - loadedImage.width) / 2, y: (canvas.height - loadedImage.height) / 2 };
+    });
+  }, []);
 
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
     if (canvasRef.current) {
@@ -166,41 +104,43 @@ export const ScreenshotTool = () => {
     }
   }, []);
 
-  const handleMouseMove = useCallback(
-    (event: React.MouseEvent) => {
-      if (isDragging.current && canvasRef.current) {
-        // Get the displayed size of the canvas
-        const rect = canvasRef.current.getBoundingClientRect();
+  const handleMouseMove = useCallback((event: React.MouseEvent) => {
+    if (isDragging.current && canvasRef.current) {
+      // Get the displayed size of the canvas
+      const rect = canvasRef.current.getBoundingClientRect();
 
-        // Calculate the scaling factors
-        const scaleX = canvasRef.current.width / rect.width;
-        const scaleY = canvasRef.current.height / rect.height;
+      // Calculate the scaling factors
+      const scaleX = canvasRef.current.width / rect.width;
+      const scaleY = canvasRef.current.height / rect.height;
 
-        // Adjust the mouse coordinates with the scaling factor
-        // Note: `clientX` and `clientY` are the mouse positions from the event
-        const adjustedX = (event.clientX - rect.left) * scaleX - dragStart.current.x;
-        const adjustedY = (event.clientY - rect.top) * scaleY - dragStart.current.y;
+      // Adjust the mouse coordinates with the scaling factor
+      // Note: `clientX` and `clientY` are the mouse positions from the event
+      const adjustedX = (event.clientX - rect.left) * scaleX - dragStart.current.x;
+      const adjustedY = (event.clientY - rect.top) * scaleY - dragStart.current.y;
 
-        // Update the position taking into account the scaling
-        position.current = { x: adjustedX, y: adjustedY };
-
-        // Redraw the canvas with the new image position
-        draw(canvasRef.current, image, position.current, backgroundColour);
-      }
-    },
-    [image, backgroundColour],
-  );
+      // Update the position taking into account the scaling
+      position.current = { x: adjustedX, y: adjustedY };
+    }
+  }, []);
 
   // Reset the dragging flag when the mouse is released
   const handleMouseUp = useCallback(() => {
     isDragging.current = false;
   }, []);
 
-  // Redraw the canvas when the image or background changes
+  // Redraw the canvas when anything changes
   useEffect(() => {
-    if (!canvasRef.current) return;
-    draw(canvasRef.current, image, position.current, backgroundColour);
-  }, [image, backgroundColour]);
+    const redraw = (_delta: number) => {
+      draw(canvasRef.current, image, position.current, backgroundColour);
+      requestRef.current = requestAnimationFrame(redraw);
+    };
+    requestRef.current = requestAnimationFrame(redraw);
+    return () => {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+    };
+  }, [backgroundColour, image]);
 
   // Add event listeners for mouse up and mouse leave
   useEffect(() => {

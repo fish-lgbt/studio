@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Dropzone } from './dropzone';
 import { DownloadCanvasButton } from './download-canvas-button';
 import { BackgroundColourPicker } from './background-colour-picker';
-import { RenderPipeline } from './modify-image-or-canvas';
+import { RenderPipeline } from './render-pipeline';
 import { cn } from '@/cn';
 
 export type DropzoneProps = {
@@ -39,7 +39,7 @@ const generateColor = () => {
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
-function drawGridPattern(canvas: HTMLCanvasElement, gridSize: number, color: string = '#000'): void {
+const drawGridPattern = (canvas: HTMLCanvasElement, gridSize: number, color: string = '#000') => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
@@ -59,6 +59,35 @@ function drawGridPattern(canvas: HTMLCanvasElement, gridSize: number, color: str
   }
 
   ctx.stroke();
+};
+
+function drawWaves(canvas: HTMLCanvasElement) {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const lines = 100; // Number of lines you want to draw
+  const waveAmplitude = 10; // The amplitude of the wave
+  const waveFrequency = 0.1; // The frequency of the wave
+
+  // Set the color of the lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+  ctx.lineWidth = 2;
+
+  ctx.beginPath(); // Begin a new path for the combined lines
+
+  for (let i = 0; i < lines; i++) {
+    for (let x = 0; x <= canvas.width; x += 10) {
+      // Calculate the y position of the line at point x
+      const y = waveAmplitude * Math.sin(x * waveFrequency + i * waveFrequency) + (canvas.height / lines) * i;
+      if (x === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+  }
+
+  ctx.stroke(); // Stroke the path once after all lines are defined
 }
 
 const drawDotPattern = (canvas: HTMLCanvasElement, dotSize: number, colour: string = '#000'): void => {
@@ -92,7 +121,11 @@ type DrawParams = {
   backgroundImage: HTMLImageElement | HTMLCanvasElement | null;
   cornerRadius: number;
   frameColour: string | null;
-  pattern: 'grid' | 'dot' | 'both' | null;
+  patterns: {
+    grid: boolean;
+    dot: boolean;
+    waves: boolean;
+  };
 };
 
 const draw = ({
@@ -108,7 +141,7 @@ const draw = ({
   backgroundImage,
   cornerRadius,
   frameColour,
-  pattern,
+  patterns,
 }: DrawParams) => {
   const ctx = canvas?.getContext('2d');
 
@@ -132,8 +165,9 @@ const draw = ({
   ctx.drawImage(canvasWithBackground, 0, 0, canvas.width, canvas.height);
 
   // Draw the pattern to the main canvas
-  if (pattern === 'grid' || pattern === 'both') drawGridPattern(canvas, 20, 'rgba(255, 255, 255, 0.5)');
-  if (pattern === 'dot' || pattern === 'both') drawDotPattern(canvas, 5, 'rgba(255, 255, 255, 0.5)');
+  if (patterns.grid) drawGridPattern(canvas, 20, 'rgba(255, 255, 255, 0.5)');
+  if (patterns.dot) drawDotPattern(canvas, 5, 'rgba(255, 255, 255, 0.5)');
+  if (patterns.waves) drawWaves(canvas);
 
   // Stop here if there's no image
   if (!image) return;
@@ -147,6 +181,7 @@ const draw = ({
       ? [
           {
             padding: 10,
+            backgroundType: 'colour' as const,
             backgroundColour: frameColour === '#FFFFFF' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
             cornerRadius,
           },
@@ -316,7 +351,15 @@ export const ScreenshotTool = () => {
   const [canvasRatio, setCanvasRatio] = useState<'16:9' | '4:3' | '1:1'>('16:9');
   const [frameColour, setFrameColour] = useState<string>('#FFFFFF');
   const [autoCenter, setAutoCenter] = useState(true);
-  const [pattern, setPattern] = useState<'grid' | 'dot' | 'both' | null>('both');
+  const [patterns, setPatterns] = useState<{
+    grid: boolean;
+    dot: boolean;
+    waves: boolean;
+  }>({
+    grid: false,
+    dot: false,
+    waves: false,
+  });
   const images = useRef<HTMLImageElement[]>([]);
 
   useEffect(() => {
@@ -484,7 +527,7 @@ export const ScreenshotTool = () => {
         backgroundImage: backgroundImage.current,
         cornerRadius,
         frameColour,
-        pattern,
+        patterns,
       });
       requestRef.current = requestAnimationFrame(redraw);
     };
@@ -508,7 +551,7 @@ export const ScreenshotTool = () => {
     canvasRef.current?.width,
     canvasRef.current?.height,
     autoCenter,
-    pattern,
+    patterns,
   ]);
 
   // Add event listeners for mouse up and mouse leave
@@ -708,22 +751,34 @@ export const ScreenshotTool = () => {
   const patternPicker = (
     <div className="flex flex-row gap-2">
       <label htmlFor="pattern-picker">Pattern</label>
-      <select
-        id="pattern-picker"
-        value={pattern ?? 'None'}
-        onChange={(event) => {
-          if (event.target.value === '') {
-            setPattern(null);
-          } else {
-            setPattern(event.target.value as 'grid' | 'dot' | 'both');
-          }
-        }}
-      >
-        <option value="">None</option>
-        <option value="grid">Grid</option>
-        <option value="dot">Dot</option>
-        <option value="both">Both</option>
-      </select>
+      {/* // Input checkbox for each pattern type */}
+      <div className="flex flex-row gap-2">
+        <input
+          id="grid"
+          type="checkbox"
+          checked={patterns.grid}
+          onChange={(event) => setPatterns({ ...patterns, grid: event.target.checked })}
+        />
+        <label htmlFor="grid">Grid</label>
+      </div>
+      <div className="flex flex-row gap-2">
+        <input
+          id="dot"
+          type="checkbox"
+          checked={patterns.dot}
+          onChange={(event) => setPatterns({ ...patterns, dot: event.target.checked })}
+        />
+        <label htmlFor="dot">Dot</label>
+      </div>
+      {/* <div className="flex flex-row gap-2">
+        <input
+          id="waves"
+          type="checkbox"
+          checked={patterns.waves}
+          onChange={(event) => setPatterns({ ...patterns, waves: event.target.checked })}
+        />
+        <label htmlFor="waves">Waves</label>
+      </div> */}
     </div>
   );
   const imageSizeSlider = (

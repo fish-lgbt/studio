@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -5,6 +6,7 @@ import { Dropzone } from './dropzone';
 import { DownloadCanvasButton } from './download-canvas-button';
 import { BackgroundColourPicker } from './background-colour-picker';
 import { RenderPipeline } from './modify-image-or-canvas';
+import { cn } from '@/cn';
 
 export type DropzoneProps = {
   onDrop: (acceptedFiles: File[]) => void;
@@ -35,21 +37,6 @@ const generateColor = () => {
   const saturation = 70 + Math.random() * 30; // Higher saturation for more vivid color
   const lightness = 40 + Math.random() * 20; // Lightness in a middle range for balance
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-};
-
-type DrawParams = {
-  canvas: HTMLCanvasElement | null;
-  image: HTMLImageElement | null;
-  scale: number;
-  position: Coordinates;
-  shadowBlur: number;
-  colourStops: string[] | null;
-  shadowColour: string | null;
-  backgroundColour: string | null;
-  colourOrGradient: 'colour' | 'gradient';
-  cornerRadius: number;
-  frameColour: string | null;
-  pattern: 'grid' | 'dot' | 'both' | null;
 };
 
 function drawGridPattern(canvas: HTMLCanvasElement, gridSize: number, color: string = '#000'): void {
@@ -92,16 +79,33 @@ const drawDotPattern = (canvas: HTMLCanvasElement, dotSize: number, colour: stri
   ctx.fill();
 };
 
+type DrawParams = {
+  canvas: HTMLCanvasElement | null;
+  image: HTMLImageElement | null;
+  scale: number;
+  position: Coordinates;
+  shadowBlur: number;
+  shadowColour: string | null;
+  backgroundType: 'colour' | 'gradient' | 'image' | null;
+  backgroundColour: string | null;
+  backgroundGradient: string[] | null;
+  backgroundImage: HTMLImageElement | HTMLCanvasElement | null;
+  cornerRadius: number;
+  frameColour: string | null;
+  pattern: 'grid' | 'dot' | 'both' | null;
+};
+
 const draw = ({
   canvas,
   image,
   position,
   shadowBlur,
   scale,
-  colourStops,
   shadowColour,
+  backgroundType,
   backgroundColour,
-  colourOrGradient,
+  backgroundGradient,
+  backgroundImage,
   cornerRadius,
   frameColour,
   pattern,
@@ -117,8 +121,10 @@ const draw = ({
   // Add a background to the main canvas
   const canvasWithBackground = new RenderPipeline(canvas, [
     {
-      backgroundColour: colourOrGradient === 'colour' ? backgroundColour : undefined,
-      colourStops: colourOrGradient === 'gradient' ? colourStops : undefined,
+      backgroundType,
+      backgroundColour,
+      backgroundGradient,
+      backgroundImage,
     },
   ]).render();
 
@@ -184,11 +190,6 @@ const draw = ({
   ctx.drawImage(processedImage, position.x, position.y, scaledImageWidth, scaledImageHeight);
 };
 
-export type BackgroundColourPickerProps = {
-  backgroundColour: string;
-  onChangeBackgroundColour: (color: string) => void;
-};
-
 const hslToRgb = (h: number, s: number, l: number) => {
   let r: number, g: number, b: number;
 
@@ -231,17 +232,17 @@ const hslToHex = (value: string) => {
 };
 
 const GradientPicker = ({
-  colourStops,
+  backgroundGradient,
   onChange,
 }: {
-  colourStops: string[] | null;
-  onChange: (colourStops: string[]) => void;
+  backgroundGradient: string[] | null;
+  onChange: (backgroundGradient: string[]) => void;
 }) => {
-  if (!colourStops) return null;
+  if (!backgroundGradient) return null;
   return (
     <div className="flex flex-row gap-2">
       <label htmlFor="gradient-picker">Gradient</label>
-      {colourStops.map((colourStop, index) => (
+      {backgroundGradient.map((colourStop, index) => (
         <input
           key={index}
           id={`gradient-picker-${index}`}
@@ -249,7 +250,7 @@ const GradientPicker = ({
           value={hslToHex(colourStop)}
           onChange={(event) => {
             onChange(
-              colourStops.map((colourStop, colourStopIndex) => {
+              backgroundGradient.map((colourStop, colourStopIndex) => {
                 if (colourStopIndex === index) {
                   return event.target.value;
                 }
@@ -297,8 +298,10 @@ const centerImage = (
 
 export const ScreenshotTool = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [backgroundColour, setBackgroundColour] = useState('#1E40AF');
-  const [colourStops, setColourStops] = useState<string[] | null>(null);
+  const [backgroundColour, setBackgroundColour] = useState<string | null>(null);
+  const [backgroundGradient, setbackgroundGradient] = useState<string[] | null>(null);
+  const backgroundImage = useRef<HTMLImageElement | null>(null);
+  const [backgroundImageSrc, setBackgroundImageSrc] = useState<string | null>(null);
   const [shadowColour, setShadowColour] = useState('#000000');
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [shadowScale, setShadowScale] = useState(20);
@@ -307,17 +310,43 @@ export const ScreenshotTool = () => {
   const dragStart = useRef<Coordinates>({ x: 0, y: 0 });
   const position = useRef<Coordinates>({ x: 0, y: 0 });
   const requestRef = useRef<number | null>(null);
-  const [colourOrGradient, setColourOrGradient] = useState<'colour' | 'gradient'>('gradient');
+  const [backgroundType, setBackgroundType] = useState<'colour' | 'gradient' | 'image' | null>('image');
   const [showDropzone, setShowDropzone] = useState(false);
   const [cornerRadius, setCornerRadius] = useState(20);
   const [canvasRatio, setCanvasRatio] = useState<'16:9' | '4:3' | '1:1'>('16:9');
   const [frameColour, setFrameColour] = useState<string>('#FFFFFF');
   const [autoCenter, setAutoCenter] = useState(true);
   const [pattern, setPattern] = useState<'grid' | 'dot' | 'both' | null>('both');
+  const images = useRef<HTMLImageElement[]>([]);
 
   useEffect(() => {
-    const newColourStops = Array.from({ length: 3 }, () => generateColor());
-    setColourStops(newColourStops);
+    // Preload the images
+    images.current = [
+      '/backgrounds/imlunahey_the_number_of_times_a_tweet_has_been_shared_over_the__0b00e323-4137-44b0-914c-c3a89e8b3b0f.webp',
+      '/backgrounds/imlunahey_the_number_of_times_a_tweet_has_been_shared_over_the__50e358ee-16df-4474-999d-aedb4118bd91.webp',
+      '/backgrounds/imlunahey_the_number_of_times_a_tweet_has_been_shared_over_the__b53afe4d-76ec-499a-be92-a58f65bbf7bd.webp',
+      '/backgrounds/imlunahey_the_number_of_times_a_tweet_has_been_shared_over_the__e9c05a6a-bcc1-4e7d-9908-90fe3ab11967.webp',
+    ].map((src) => {
+      const image = new Image();
+      image.src = src;
+      return image;
+    });
+  }, []);
+
+  useEffect(() => {
+    // Generate a random background colour
+    const newBackgroundColour = generateColor();
+    setBackgroundColour(newBackgroundColour);
+
+    // Generate a random background gradient
+    const newbackgroundGradient = Array.from({ length: 3 }, () => generateColor());
+    setbackgroundGradient(newbackgroundGradient);
+
+    // Randomly select a background image
+    const randomIndex = Math.floor(Math.random() * images.current.length);
+    const image = images.current[randomIndex];
+    backgroundImage.current = image;
+    setBackgroundImageSrc(image.src);
   }, []);
 
   const handleChangeBackground = (color: string) => {
@@ -448,10 +477,11 @@ export const ScreenshotTool = () => {
         position: position.current,
         shadowBlur: shadowScale,
         scale,
-        colourStops,
         shadowColour,
+        backgroundType,
         backgroundColour,
-        colourOrGradient,
+        backgroundGradient,
+        backgroundImage: backgroundImage.current,
         cornerRadius,
         frameColour,
         pattern,
@@ -465,13 +495,14 @@ export const ScreenshotTool = () => {
       }
     };
   }, [
+    backgroundType,
     backgroundColour,
-    colourStops,
+    backgroundGradient,
+    backgroundImage,
     image,
     shadowScale,
     scale,
     shadowColour,
-    colourOrGradient,
     cornerRadius,
     frameColour,
     canvasRef.current?.width,
@@ -521,19 +552,27 @@ export const ScreenshotTool = () => {
     <div className="flex flex-row gap-2">
       <button
         className={`${
-          colourOrGradient === 'colour' ? 'bg-blue-500' : 'bg-gray-500'
+          backgroundType === 'colour' ? 'bg-blue-500' : 'bg-gray-500'
         } rounded-md px-4 py-2 text-white font-semibold`}
-        onClick={() => setColourOrGradient('colour')}
+        onClick={() => setBackgroundType('colour')}
       >
         Colour
       </button>
       <button
         className={`${
-          colourOrGradient === 'gradient' ? 'bg-blue-500' : 'bg-gray-500'
+          backgroundType === 'gradient' ? 'bg-blue-500' : 'bg-gray-500'
         } rounded-md px-4 py-2 text-white font-semibold`}
-        onClick={() => setColourOrGradient('gradient')}
+        onClick={() => setBackgroundType('gradient')}
       >
         Gradient
+      </button>
+      <button
+        className={`${
+          backgroundType === 'image' ? 'bg-blue-500' : 'bg-gray-500'
+        } rounded-md px-4 py-2 text-white font-semibold`}
+        onClick={() => setBackgroundType('image')}
+      >
+        Image
       </button>
     </div>
   );
@@ -541,11 +580,25 @@ export const ScreenshotTool = () => {
     <button
       className="bg-blue-500 rounded-md px-4 py-2 text-white font-semibold"
       onClick={() => {
-        const newColourStops = Array.from({ length: 3 }, () => generateColor());
-        setColourStops(newColourStops);
+        // Generate a random background colour
+        if (backgroundType === 'colour') {
+          const newBackgroundColour = generateColor();
+          setBackgroundColour(newBackgroundColour);
+        }
 
-        const newBackgroundColour = generateColor();
-        setBackgroundColour(newBackgroundColour);
+        // Generate a random gradient
+        if (backgroundType === 'gradient') {
+          const newbackgroundGradient = Array.from({ length: 3 }, () => generateColor());
+          setbackgroundGradient(newbackgroundGradient);
+        }
+
+        // Randomly select a background image
+        if (backgroundType === 'image') {
+          const randomIndex = Math.floor(Math.random() * images.current.length);
+          const image = images.current[randomIndex];
+          backgroundImage.current = image;
+          setBackgroundImageSrc(image.src);
+        }
       }}
     >
       Random Background
@@ -554,13 +607,38 @@ export const ScreenshotTool = () => {
   const backgroundColourPicker = (
     <BackgroundColourPicker backgroundColour={backgroundColour} onChangeBackgroundColour={handleChangeBackground} />
   );
-  const gradientPicker = (
+  const backgroundGradientPicker = (
     <GradientPicker
-      colourStops={colourStops}
-      onChange={(newColourStops) => {
-        setColourStops(newColourStops);
+      backgroundGradient={backgroundGradient}
+      onChange={(newbackgroundGradient) => {
+        setbackgroundGradient(newbackgroundGradient);
       }}
     />
+  );
+  const backgroundImagePicker = (
+    <div className="flex flex-col gap-2">
+      <label htmlFor="background-image-picker">Image</label>
+      <div className="flex flex-row gap-2">
+        {images.current.map((image, index) => (
+          <button
+            key={index}
+            className="rounded-md p-2 text-white font-semibold"
+            onClick={() => {
+              backgroundImage.current = image;
+              setBackgroundImageSrc(image?.src ?? null);
+            }}
+          >
+            <img
+              src={image.src}
+              alt={`Background image #${index}`}
+              className={cn('w-12 h-12 object-cover', {
+                'border border-black': backgroundImageSrc === image.src,
+              })}
+            />
+          </button>
+        ))}
+      </div>
+    </div>
   );
   const shadowColourPicker = (
     <div className="flex flex-row gap-2">
@@ -684,8 +762,9 @@ export const ScreenshotTool = () => {
     // Background colour
     colourOrGradientToggle,
     randomBackgroundButton,
-    colourOrGradient === 'colour' && backgroundColourPicker,
-    colourOrGradient === 'gradient' && gradientPicker,
+    backgroundType === 'colour' && backgroundColourPicker,
+    backgroundType === 'gradient' && backgroundGradientPicker,
+    backgroundType === 'image' && backgroundImagePicker,
 
     // Shadow
     shadowColourPicker,

@@ -1,18 +1,22 @@
 type DrawImageWithRoundedCornersParams = {
   source: HTMLImageElement | HTMLCanvasElement; // Source image or canvas
 
+  backgroundType?: 'colour' | 'gradient' | 'image' | null; // Optional background type
   backgroundColour?: string | null; // Optional background colour
+  backgroundGradient?: string[] | null; // Optional colour stops for gradient background
+  backgroundImage?: HTMLImageElement | HTMLCanvasElement | null; // Optional background image
   cornerRadius?: number | null; // Radius of the corners
-  colourStops?: string[] | null; // Optional colour stops for gradient background
   padding?: number | null; // Optional padding
 };
 
 const modifyImageOrCanvas = ({
   source,
 
+  backgroundType,
   backgroundColour,
+  backgroundGradient,
+  backgroundImage,
   cornerRadius = 0,
-  colourStops,
   padding = 0,
 }: DrawImageWithRoundedCornersParams): HTMLCanvasElement => {
   const canvas = document.createElement('canvas');
@@ -43,20 +47,30 @@ const modifyImageOrCanvas = ({
   // Default to transparent background
   ctx.fillStyle = 'transparent';
 
-  // Optional background
-  if (backgroundColour) {
+  // Optional background colour
+  if (backgroundType === 'colour' && backgroundColour) {
     ctx.fillStyle = backgroundColour;
     ctx.fillRect(0, 0, source.width, source.height);
   }
 
   // Optional gradient background
-  if (colourStops) {
+  if (backgroundType === 'gradient' && backgroundGradient) {
     const gradient = ctx.createLinearGradient(0, 0, source.width, source.height);
-    colourStops.forEach((stop, index) => {
-      gradient.addColorStop(index / (colourStops.length - 1), stop);
+    backgroundGradient.forEach((stop, index) => {
+      gradient.addColorStop(index / (backgroundGradient.length - 1), stop);
     });
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, source.width, source.height);
+  }
+
+  // Optional image background
+  if (backgroundType === 'image' && backgroundImage) {
+    // Make sure the background covers the whole of the canvas
+    // also dont stretch the image make sure it covers the whole canvas
+    const scale = Math.max(source.width / backgroundImage.width, source.height / backgroundImage.height);
+    const x = source.width / 2 - (backgroundImage.width / 2) * scale;
+    const y = source.height / 2 - (backgroundImage.height / 2) * scale;
+    ctx.drawImage(backgroundImage, x, y, backgroundImage.width * scale, backgroundImage.height * scale);
   }
 
   // Draw the source

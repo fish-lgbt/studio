@@ -11,14 +11,10 @@ export const Dropzone = ({ onDrop }: DropzoneProps) => {
   return (
     <div
       {...getRootProps()}
-      className="border-dashed border-4 border-gray-200 rounded-lg p-4 cursor-pointer text-center hover:border-gray-300"
+      className="rounded-md p-4 cursor-pointer text-center text-white bg-black w-[250px] aspect-square items-center justify-center flex flex-col bg-opacity-75"
     >
       <input {...getInputProps()} />
-      {isDragActive ? (
-        <p className="text-gray-500">Drop the files here ...</p>
-      ) : (
-        <p className="text-gray-500">{"Drag 'n' drop some files here, or click to select files"}</p>
-      )}
+      {isDragActive ? <p>Drop the files here ...</p> : <p>{"Drag 'n' drop some files here, or click to select files"}</p>}
     </div>
   );
 };

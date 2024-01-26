@@ -1,0 +1,60 @@
+{
+  "display_override": [],
+  "background_color": "#ffffff",
+  "description": "Convert screenshots to professional-quality images quickly.",
+  "dir": "ltr",
+  "display": "fullscreen",
+  "name": "showcase-studio",
+  "orientation": "landscape",
+  "scope": "/",
+  "short_name": "Showcase",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "type": "image/x-icon",
+      "sizes": "16x16"
+    },
+    {
+      "src": "/favicon.ico",
+      "type": "image/x-icon"
+    }
+  ],
+  "id": "showcase-studio",
+  "lang": "en",
+  "categories": ["photo", "social", "utilities"],
+  "screenshots": [
+    {
+      "src": "/screenshots/home-screen.png",
+      "sizes": "3020x1714",
+      "type": "image/png",
+      "description": "Home screen"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Create a new screenshot",
+      "description": "Create a new screenshot",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/favicon.ico",
+          "sizes": "16x16"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "related_applications": [],
+  "prefer_related_applications": false
+}

@@ -14,11 +14,22 @@
     {
       "src": "/favicon.ico",
       "type": "image/x-icon",
-      "sizes": "16x16"
+      "sizes": "48x48"
     },
     {
-      "src": "/favicon.ico",
-      "type": "image/x-icon"
+      "src": "/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "type": "image/png",
+      "sizes": "32x32"
+    },
+    {
+      "src": "/favicon-16x16.png",
+      "type": "image/png",
+      "sizes": "16x16"
     }
   ],
   "id": "showcase-studio",
@@ -29,7 +40,8 @@
       "src": "/screenshots/home-screen.png",
       "sizes": "3020x1714",
       "type": "image/png",
-      "description": "Home screen"
+      "description": "Home screen",
+      "form_factor": "wide"
     }
   ],
   "shortcuts": [
@@ -40,19 +52,22 @@
       "icons": [
         {
           "src": "/favicon.ico",
-          "sizes": "16x16"
+          "sizes": "48x48"
         }
       ]
     }
   ],
   "share_target": {
     "action": "/",
-    "method": "GET",
+    "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
+      "files": [
+        {
+          "name": "file",
+          "accept": ["image/png", "image/jpeg", "image/webp"]
+        }
+      ]
     }
   },
   "related_applications": [],

@@ -7,6 +7,8 @@ import { DownloadCanvasButton } from './download-canvas-button';
 import { BackgroundColourPicker } from './background-colour-picker';
 import { RenderPipeline } from './render-pipeline';
 import { cn } from '@/cn';
+import { hslToHex } from './hsl-to-hex';
+import { useSearchParams } from '@/hooks/use-search-params';
 
 export type DropzoneProps = {
   onDrop: (acceptedFiles: File[]) => void;
@@ -36,7 +38,7 @@ const generateColor = () => {
   const hue = hues[Math.floor(Math.random() * hues.length)];
   const saturation = 70 + Math.random() * 30; // Higher saturation for more vivid color
   const lightness = 40 + Math.random() * 20; // Lightness in a middle range for balance
-  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  return hslToHex(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
 };
 
 const drawGridPattern = (canvas: HTMLCanvasElement, gridSize: number, color: string = '#000') => {
@@ -108,6 +110,42 @@ const drawDotPattern = (canvas: HTMLCanvasElement, dotSize: number, colour: stri
   ctx.fill();
 };
 
+const hexToRga = (hex: string, alpha: number) => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+type AddLensFlareToCanvasParams = {
+  canvas: HTMLCanvasElement;
+  x: number;
+  y: number;
+  intensity: number;
+  colour: string;
+};
+
+const addLensFlareToCanvas = ({ canvas, x, y, intensity, colour }: AddLensFlareToCanvasParams) => {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  // Adjusting the flare effect size and position
+  const radius = intensity * 2;
+
+  // Simple lens flare effect
+  const gradient = ctx.createRadialGradient(x, y, radius * 0.3, x, y, radius);
+  gradient.addColorStop(0, hexToRga(colour, 0.8));
+  gradient.addColorStop(0.2, hexToRga(colour, 0.6));
+  gradient.addColorStop(0.4, hexToRga(colour, 0.4));
+  gradient.addColorStop(1, hexToRga(colour, 0));
+
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, 2 * Math.PI);
+  ctx.fill();
+};
+
 type DrawParams = {
   canvas: HTMLCanvasElement | null;
   image: HTMLImageElement | null;
@@ -121,6 +159,8 @@ type DrawParams = {
   backgroundImage: HTMLImageElement | HTMLCanvasElement | null;
   cornerRadius: number;
   frameColour: string | null;
+  flareIntensity: number;
+  flareColour: string;
   patterns: {
     grid: boolean;
     dot: boolean;
@@ -141,6 +181,8 @@ const draw = ({
   backgroundImage,
   cornerRadius,
   frameColour,
+  flareIntensity,
+  flareColour,
   patterns,
 }: DrawParams) => {
   const ctx = canvas?.getContext('2d');
@@ -168,6 +210,15 @@ const draw = ({
   if (patterns.grid) drawGridPattern(canvas, 20, 'rgba(255, 255, 255, 0.5)');
   if (patterns.dot) drawDotPattern(canvas, 5, 'rgba(255, 255, 255, 0.5)');
   if (patterns.waves) drawWaves(canvas);
+
+  // Add lense flare to the center of the canvas
+  addLensFlareToCanvas({
+    canvas,
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    intensity: flareIntensity,
+    colour: flareColour,
+  });
 
   // Stop here if there's no image
   if (!image) return;
@@ -217,53 +268,16 @@ const draw = ({
     scaledImageHeight = image.height * scaleFactorToFitCanvas;
   }
 
+  // Snap the image to a grid of 50px
+  position.x = Math.round(position.x / 50) * 50;
+  position.y = Math.round(position.y / 50) * 50;
+
   // Clamp the image position to the canvas
   position.x = Math.min(Math.max(position.x, 0), canvas.width - scaledImageWidth);
   position.y = Math.min(Math.max(position.y, 0), canvas.height - scaledImageHeight);
 
   // Draw the processed image to the main canvas
   ctx.drawImage(processedImage, position.x, position.y, scaledImageWidth, scaledImageHeight);
-};
-
-const hslToRgb = (h: number, s: number, l: number) => {
-  let r: number, g: number, b: number;
-
-  if (s === 0) {
-    r = g = b = l; // achromatic
-  } else {
-    const hue2rgb = (p: number, q: number, t: number) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-      return p;
-    };
-
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1 / 3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1 / 3);
-  }
-
-  const toHex = (x: number) => {
-    const hex = Math.round(x * 255).toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  };
-
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-};
-
-const hslToHex = (value: string) => {
-  if (!value.startsWith('hsl')) return value;
-  const [h, s, l] = value
-    .replace('hsl(', '')
-    .replace(')', '')
-    .split(',')
-    .map((value) => Number(value.replace('%', '').trim()));
-
-  return hslToRgb(h / 360, s / 100, l / 100);
 };
 
 const GradientPicker = ({
@@ -282,7 +296,7 @@ const GradientPicker = ({
           key={index}
           id={`gradient-picker-${index}`}
           type="color"
-          value={hslToHex(colourStop)}
+          value={colourStop}
           onChange={(event) => {
             onChange(
               backgroundGradient.map((colourStop, colourStopIndex) => {
@@ -333,34 +347,114 @@ const centerImage = (
 
 export const ScreenshotTool = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [backgroundColour, setBackgroundColour] = useState<string | null>(null);
-  const [backgroundGradient, setbackgroundGradient] = useState<string[] | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams<{
+    backgroundType: 'colour' | 'gradient' | 'image' | null;
+    backgroundColour: string | null;
+    backgroundGradient: string | null;
+    backgroundImage: string | null;
+    shadowColour: string;
+    shadowScale: number;
+    scale: number;
+    cornerRadius: number;
+    canvasRatio: '16:9' | '4:3' | '1:1';
+    frameColour: string;
+    autoCenter: boolean;
+    flareIntensity: number;
+    flareColour: string;
+    patternsGrid: boolean;
+    patternsDot: boolean;
+    patternsWaves: boolean;
+  }>();
+
+  // Backgrounds
+  const [backgroundType, setBackgroundType] = useState<'colour' | 'gradient' | 'image' | null>(
+    (searchParams.backgroundType as 'colour' | 'gradient' | 'image') ?? ('image' as const),
+  );
+  const [backgroundColour, setBackgroundColour] = useState<string | null>(
+    searchParams.backgroundColour ? `#${searchParams.backgroundColour}` : null,
+  );
+  const [backgroundGradient, setbackgroundGradient] = useState<string[] | null>(
+    searchParams.backgroundGradient?.split('-').map((value) => `#${value}`) ?? null,
+  );
   const backgroundImage = useRef<HTMLImageElement | null>(null);
-  const [backgroundImageSrc, setBackgroundImageSrc] = useState<string | null>(null);
-  const [shadowColour, setShadowColour] = useState('#000000');
-  const [image, setImage] = useState<HTMLImageElement | null>(null);
-  const [shadowScale, setShadowScale] = useState(20);
-  const [scale, setScale] = useState(50);
-  const isDragging = useRef(false);
-  const dragStart = useRef<Coordinates>({ x: 0, y: 0 });
-  const position = useRef<Coordinates>({ x: 0, y: 0 });
-  const requestRef = useRef<number | null>(null);
-  const [backgroundType, setBackgroundType] = useState<'colour' | 'gradient' | 'image' | null>('image');
-  const [showDropzone, setShowDropzone] = useState(false);
-  const [cornerRadius, setCornerRadius] = useState(20);
-  const [canvasRatio, setCanvasRatio] = useState<'16:9' | '4:3' | '1:1'>('16:9');
-  const [frameColour, setFrameColour] = useState<string>('#FFFFFF');
-  const [autoCenter, setAutoCenter] = useState(true);
+  const [backgroundImageSrc, setBackgroundImageSrc] = useState<string | null>(
+    searchParams.backgroundImage ? Buffer.from(searchParams.backgroundImage, 'base64').toString('utf-8') : null,
+  );
+
+  // Config
+  const [shadowColour, setShadowColour] = useState(searchParams.shadowColour ? `#${searchParams.shadowColour}` : '#000000');
+  const [shadowScale, setShadowScale] = useState(searchParams.shadowScale ? Number(searchParams.shadowScale) : 0);
+  const [scale, setScale] = useState(searchParams.scale ? Number(searchParams.scale) : 100);
+  const [cornerRadius, setCornerRadius] = useState(searchParams.cornerRadius ? Number(searchParams.cornerRadius) : 0);
+  const [canvasRatio, setCanvasRatio] = useState<'16:9' | '4:3' | '1:1'>(
+    (searchParams.canvasRatio as '16:9' | '4:3' | '1:1') ?? '16:9',
+  );
+  const [frameColour, setFrameColour] = useState<string>(
+    searchParams.frameColour ? `#${searchParams.frameColour}` : '#FFFFFF',
+  );
+  const [autoCenter, setAutoCenter] = useState(searchParams.autoCenter === 'true');
+  const [flareIntensity, setFlareIntensity] = useState(
+    searchParams.flareIntensity ? Number(searchParams.flareIntensity) : 0,
+  );
+  const [flareColour, setFlareColour] = useState(searchParams.flareColour ? `#${searchParams.flareColour}` : '#FFFFFF');
   const [patterns, setPatterns] = useState<{
     grid: boolean;
     dot: boolean;
     waves: boolean;
   }>({
-    grid: false,
-    dot: false,
-    waves: false,
+    grid: searchParams.patternsGrid === 'true',
+    dot: searchParams.patternsDot === 'true',
+    waves: searchParams.patternsWaves === 'true',
   });
+
+  // User uploaded image
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+
+  // Internal Controls
+  const isDragging = useRef(false);
+  const dragStart = useRef<Coordinates>({ x: 0, y: 0 });
+  const position = useRef<Coordinates>({ x: 0, y: 0 });
+  const requestRef = useRef<number | null>(null);
+  const [showDropzone, setShowDropzone] = useState(false);
   const images = useRef<HTMLImageElement[]>([]);
+
+  // When config changes, update the URL
+  useEffect(() => {
+    setSearchParams({
+      backgroundType,
+      backgroundColour: backgroundColour ? backgroundColour.slice(1) : null,
+      backgroundGradient: backgroundGradient?.map((value) => value.slice(1))?.join('-') ?? null,
+      backgroundImage: backgroundImageSrc ? Buffer.from(backgroundImageSrc).toString('base64') : null,
+      shadowColour: shadowColour.slice(1),
+      shadowScale,
+      scale,
+      cornerRadius,
+      canvasRatio,
+      frameColour: frameColour.slice(1),
+      autoCenter,
+      flareIntensity,
+      flareColour: flareColour.slice(1),
+      patternsDot: patterns.dot,
+      patternsGrid: patterns.grid,
+      patternsWaves: patterns.waves,
+    });
+  }, [
+    backgroundColour,
+    backgroundGradient,
+    backgroundImageSrc,
+    shadowColour,
+    shadowScale,
+    scale,
+    backgroundType,
+    cornerRadius,
+    canvasRatio,
+    frameColour,
+    autoCenter,
+    flareIntensity,
+    flareColour,
+    patterns,
+    setSearchParams,
+  ]);
 
   useEffect(() => {
     // Preload the images
@@ -521,19 +615,25 @@ export const ScreenshotTool = () => {
 
   useEffect(() => {
     // Generate a random background colour
-    const newBackgroundColour = generateColor();
-    setBackgroundColour(newBackgroundColour);
+    if (backgroundColour === null) {
+      const newBackgroundColour = generateColor();
+      setBackgroundColour(newBackgroundColour);
+    }
 
     // Generate a random background gradient
-    const newbackgroundGradient = Array.from({ length: 3 }, () => generateColor());
-    setbackgroundGradient(newbackgroundGradient);
+    if (backgroundGradient === null) {
+      const newbackgroundGradient = Array.from({ length: 3 }, () => generateColor());
+      setbackgroundGradient(newbackgroundGradient);
+    }
 
     // Randomly select a background image
-    const randomIndex = Math.floor(Math.random() * images.current.length);
-    const image = images.current[randomIndex];
-    backgroundImage.current = image;
-    setBackgroundImageSrc(image.src);
-  }, []);
+    if (backgroundImage.current === null) {
+      const randomIndex = Math.floor(Math.random() * images.current.length);
+      const image = images.current[randomIndex];
+      backgroundImage.current = image;
+      setBackgroundImageSrc(image.src);
+    }
+  }, [backgroundColour, backgroundGradient]);
 
   const handleChangeBackground = (color: string) => {
     setBackgroundColour(color);
@@ -670,6 +770,8 @@ export const ScreenshotTool = () => {
         backgroundImage: backgroundImage.current,
         cornerRadius,
         frameColour,
+        flareIntensity,
+        flareColour,
         patterns,
       });
       requestRef.current = requestAnimationFrame(redraw);
@@ -695,6 +797,8 @@ export const ScreenshotTool = () => {
     canvasRef.current?.height,
     autoCenter,
     patterns,
+    flareIntensity,
+    flareColour,
   ]);
 
   // Add event listeners for mouse up and mouse leave
@@ -891,6 +995,30 @@ export const ScreenshotTool = () => {
       </select>
     </div>
   );
+  const flareColourPicker = (
+    <div className="flex flex-row gap-2">
+      <label htmlFor="flare-colour-picker">Flare Colour</label>
+      <input
+        id="flare-colour-picker"
+        type="color"
+        value={flareColour}
+        onChange={(event) => setFlareColour(event.target.value)}
+      />
+    </div>
+  );
+  const flareIntensitySlider = (
+    <div className="flex flex-row gap-2">
+      <label htmlFor="flare-intensity-slider">Flare Intensity</label>
+      <input
+        id="flare-intensity-slider"
+        type="range"
+        min="0"
+        max="1000"
+        value={flareIntensity}
+        onChange={(event) => setFlareIntensity(Number(event.target.value))}
+      />
+    </div>
+  );
   const patternPicker = (
     <div className="flex flex-row gap-2">
       <label htmlFor="pattern-picker">Pattern</label>
@@ -913,7 +1041,7 @@ export const ScreenshotTool = () => {
         />
         <label htmlFor="dot">Dot</label>
       </div>
-      {/* <div className="flex flex-row gap-2">
+      <div className="flex flex-row gap-2">
         <input
           id="waves"
           type="checkbox"
@@ -921,7 +1049,7 @@ export const ScreenshotTool = () => {
           onChange={(event) => setPatterns({ ...patterns, waves: event.target.checked })}
         />
         <label htmlFor="waves">Waves</label>
-      </div> */}
+      </div>
     </div>
   );
   const imageSizeSlider = (
@@ -976,6 +1104,10 @@ export const ScreenshotTool = () => {
 
     // Frame colour
     frameColourPicker,
+
+    // Flare
+    flareColourPicker,
+    flareIntensitySlider,
 
     // Pattern
     patternPicker,

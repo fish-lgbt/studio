@@ -1,5 +1,7 @@
 'use client';
 
+import { hslToHex } from './hsl-to-hex';
+
 type BackgroundColourPickerProps = {
   backgroundColour: string | null;
   onChangeBackgroundColour: (color: string) => void;
@@ -15,7 +17,7 @@ export const BackgroundColourPicker = ({ backgroundColour, onChangeBackgroundCol
       <input
         id="background-colour"
         type="color"
-        value={backgroundColour}
+        value={hslToHex(backgroundColour)}
         onChange={(event) => onChangeBackgroundColour(event.target.value)}
         className="border border-gray-200 rounded-md"
       />

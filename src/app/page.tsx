@@ -1,4 +1,4 @@
-import { ScreenshotTool } from './components/screenshot-tool';
+import { ScreenshotTool } from '../components/screenshot-tool';
 
 export default function Home() {
   return (

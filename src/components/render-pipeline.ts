@@ -92,6 +92,7 @@ export class RenderPipeline {
   constructor(private source: HTMLImageElement | HTMLCanvasElement, private pipeline: Pipeline[]) {}
 
   render() {
-    return this.pipeline.reduce((canvas, params) => modifyImageOrCanvas({ ...params, source: canvas }), this.source);
+    const result = this.pipeline.reduce((canvas, params) => modifyImageOrCanvas({ ...params, source: canvas }), this.source);
+    return result as HTMLCanvasElement;
   }
 }

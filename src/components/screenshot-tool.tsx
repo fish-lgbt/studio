@@ -166,6 +166,8 @@ type DrawParams = {
     dot: boolean;
     waves: boolean;
   };
+  textToRender: string | null;
+  fontSize: number;
 };
 
 const draw = ({
@@ -184,6 +186,8 @@ const draw = ({
   flareIntensity,
   flareColour,
   patterns,
+  textToRender,
+  fontSize,
 }: DrawParams) => {
   const ctx = canvas?.getContext('2d');
 
@@ -281,6 +285,30 @@ const draw = ({
 
   // Draw the processed image to the main canvas
   ctx.drawImage(imageCanvas, position.x, position.y, scaledImageWidth, scaledImageHeight);
+
+  // Reset shadow on the main canvas
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+
+  // Render text to the canvas
+  if (textToRender) {
+    const fontFamily = 'sans-serif';
+    const textCanvas = document.createElement('canvas');
+    textCanvas.width = canvas.width;
+    textCanvas.height = canvas.height;
+    const textCtx = textCanvas.getContext('2d');
+    if (!textCtx) return;
+    textCtx.font = `${fontSize}px ${fontFamily}`;
+    textCtx.textAlign = 'center';
+    textCtx.textBaseline = 'middle';
+    textCtx.fillStyle = '#FFFFFF';
+    textCtx.fillText(textToRender, textCanvas.width / 2, textCanvas.height / 2);
+
+    // Draw the text to the main canvas
+    const textX = (canvas.width - textCanvas.width) / 2;
+    const textY = (canvas.height - textCanvas.height) / 2;
+    ctx.drawImage(textCanvas, textX, textY);
+  }
 };
 
 const GradientPicker = ({
@@ -367,6 +395,8 @@ export const ScreenshotTool = () => {
     patternsGrid: boolean;
     patternsDot: boolean;
     patternsWaves: boolean;
+    textToRender: string | null;
+    fontSize: number;
   }>();
 
   // Backgrounds
@@ -409,6 +439,8 @@ export const ScreenshotTool = () => {
     dot: searchParams.patternsDot === 'true',
     waves: searchParams.patternsWaves === 'true',
   });
+  const [textToRender, setTextToRender] = useState<string | null>(searchParams.textToRender ?? null);
+  const [fontSize, setFontSize] = useState(searchParams.fontSize ? Number(searchParams.fontSize) : 100);
 
   // User uploaded image
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -440,6 +472,8 @@ export const ScreenshotTool = () => {
       patternsDot: patterns.dot,
       patternsGrid: patterns.grid,
       patternsWaves: patterns.waves,
+      textToRender,
+      fontSize,
     });
   }, [
     backgroundColour,
@@ -457,6 +491,8 @@ export const ScreenshotTool = () => {
     flareColour,
     patterns,
     setSearchParams,
+    textToRender,
+    fontSize,
   ]);
 
   useEffect(() => {
@@ -776,6 +812,8 @@ export const ScreenshotTool = () => {
         flareIntensity,
         flareColour,
         patterns,
+        textToRender,
+        fontSize,
       });
       requestRef.current = requestAnimationFrame(redraw);
     };
@@ -802,6 +840,8 @@ export const ScreenshotTool = () => {
     patterns,
     flareIntensity,
     flareColour,
+    textToRender,
+    fontSize,
   ]);
 
   // Add event listeners for mouse up and mouse leave
@@ -1063,6 +1103,31 @@ export const ScreenshotTool = () => {
       </div>
     </div>
   );
+  const textToRenderInput = (
+    <div className="flex flex-row gap-2">
+      <label htmlFor="text-to-render-input">Text</label>
+      <input
+        id="text-to-render-input"
+        type="text"
+        value={textToRender ?? ''}
+        className="border border-black px-1"
+        onChange={(event) => setTextToRender(event.target.value)}
+      />
+    </div>
+  );
+  const fontSizeSlider = (
+    <div className="flex flex-row gap-2">
+      <label htmlFor="font-size-slider">Font Size</label>
+      <input
+        id="font-size-slider"
+        type="range"
+        min="1"
+        max="100"
+        value={fontSize}
+        onChange={(event) => setFontSize(Number(event.target.value))}
+      />
+    </div>
+  );
   const imageSizeSlider = (
     <div className="flex flex-row gap-2">
       <label htmlFor="image-size-slider">Image Size</label>
@@ -1122,6 +1187,10 @@ export const ScreenshotTool = () => {
 
     // Pattern
     patternPicker,
+
+    // Text styling
+    textToRenderInput,
+    fontSizeSlider,
 
     // Image position
     imageSizeSlider,

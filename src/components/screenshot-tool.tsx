@@ -268,9 +268,9 @@ const draw = ({
     scaledImageHeight = image.height * scaleFactorToFitCanvas;
   }
 
-  // Snap the image to a grid of 50px
-  position.x = Math.round(position.x / 50) * 50;
-  position.y = Math.round(position.y / 50) * 50;
+  // Snap the image to a grid of 25px
+  position.x = Math.round(position.x / 25) * 25;
+  position.y = Math.round(position.y / 25) * 25;
 
   // Clamp the image position to the canvas
   position.x = Math.min(Math.max(position.x, 0), canvas.width - scaledImageWidth);
@@ -828,6 +828,7 @@ export const ScreenshotTool = () => {
         maxHeight: `${canvasHeight / 2}px`,
         maxWidth: `${canvasWidth / 2}px`,
       }}
+      className="border border-black dark:border-white"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

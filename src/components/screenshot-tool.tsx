@@ -348,7 +348,7 @@ const centerImage = (
 export const ScreenshotTool = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [searchParams, setSearchParams] = useSearchParams<{
-    backgroundType: 'colour' | 'gradient' | 'image' | null;
+    backgroundType: 'colour' | 'gradient' | 'image' | 'transparent' | null;
     backgroundColour: string | null;
     backgroundGradient: string | null;
     backgroundImage: string | null;

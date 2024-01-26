@@ -9,6 +9,19 @@ import { RenderPipeline } from './render-pipeline';
 import { cn } from '@/cn';
 import { hslToHex } from './hsl-to-hex';
 import { useSearchParams } from '@/hooks/use-search-params';
+import { Button } from './button';
+
+const RefreshIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24">
+    <path
+      stroke="#FFF"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M18.61 5.89L15.5 9h6V3l-2.89 2.89zm0 0A9.001 9.001 0 003.055 11m2.335 7.11L2.5 21v-6h6l-3.11 3.11zm0 0A9.001 9.001 0 0020.945 13"
+    ></path>
+  </svg>
+);
 
 export type DropzoneProps = {
   onDrop: (acceptedFiles: File[]) => void;
@@ -230,11 +243,6 @@ const draw = ({
   // Stop here if there's no image
   if (!image) return;
 
-  // Setting shadow on the main canvas
-  if (shadowColour && shadowBlur) {
-    ctx.shadowColor = shadowColour;
-    ctx.shadowBlur = shadowBlur;
-  }
   // Calculate the aspect ratio of the image
   const imageAspectRatio = image.width / image.height;
 
@@ -282,6 +290,12 @@ const draw = ({
         ]
       : []),
   ]).render();
+
+  // Setting shadow on the main canvas
+  if (shadowColour && shadowBlur) {
+    ctx.shadowColor = shadowColour;
+    ctx.shadowBlur = shadowBlur;
+  }
 
   // Draw the processed image to the main canvas
   ctx.drawImage(imageCanvas, position.x, position.y, scaledImageWidth, scaledImageHeight);
@@ -418,7 +432,7 @@ export const ScreenshotTool = () => {
   const [shadowColour, setShadowColour] = useState(searchParams.shadowColour ? `#${searchParams.shadowColour}` : '#000000');
   const [shadowScale, setShadowScale] = useState(searchParams.shadowScale ? Number(searchParams.shadowScale) : 0);
   const [scale, setScale] = useState(searchParams.scale ? Number(searchParams.scale) : 100);
-  const [cornerRadius, setCornerRadius] = useState(searchParams.cornerRadius ? Number(searchParams.cornerRadius) : 0);
+  const [cornerRadius, setCornerRadius] = useState(searchParams.cornerRadius ? Number(searchParams.cornerRadius) : 20);
   const [canvasRatio, setCanvasRatio] = useState<'16:9' | '4:3' | '1:1'>(
     (searchParams.canvasRatio as '16:9' | '4:3' | '1:1') ?? '16:9',
   );
@@ -880,46 +894,10 @@ export const ScreenshotTool = () => {
       onTouchEnd={handleTouchEnd}
     />
   );
-  // Two option boxes for colour or gradient
-  const colourOrGradientToggle = (
-    <div className="flex flex-row gap-2">
-      <button
-        className={`${
-          backgroundType === 'colour' ? 'bg-blue-500' : 'bg-gray-500'
-        } rounded-md px-4 py-2 text-white font-semibold`}
-        onClick={() => setBackgroundType('colour')}
-      >
-        Colour
-      </button>
-      <button
-        className={`${
-          backgroundType === 'gradient' ? 'bg-blue-500' : 'bg-gray-500'
-        } rounded-md px-4 py-2 text-white font-semibold`}
-        onClick={() => setBackgroundType('gradient')}
-      >
-        Gradient
-      </button>
-      <button
-        className={`${
-          backgroundType === 'image' ? 'bg-blue-500' : 'bg-gray-500'
-        } rounded-md px-4 py-2 text-white font-semibold`}
-        onClick={() => setBackgroundType('image')}
-      >
-        Image
-      </button>
-      <button
-        className={`${
-          backgroundType === 'transparent' ? 'bg-blue-500' : 'bg-gray-500'
-        } rounded-md px-4 py-2 text-white font-semibold`}
-        onClick={() => setBackgroundType('transparent')}
-      >
-        Transparent
-      </button>
-    </div>
-  );
   const randomBackgroundButton = (
-    <button
-      className="bg-blue-500 rounded-md px-4 py-2 text-white font-semibold"
+    <Button
+      className="py-2"
+      disabled={backgroundType === 'transparent'}
       onClick={() => {
         // Generate a random background colour
         if (backgroundType === 'colour') {
@@ -942,8 +920,37 @@ export const ScreenshotTool = () => {
         }
       }}
     >
-      Random Background
-    </button>
+      <RefreshIcon />
+    </Button>
+  );
+  const backgroundTypeButtons = (
+    <div className="flex flex-row gap-2">
+      <Button
+        className={cn(backgroundType === 'colour' ? 'bg-blue-500' : 'bg-gray-500')}
+        onClick={() => setBackgroundType('colour')}
+      >
+        Colour
+      </Button>
+      <Button
+        className={cn(backgroundType === 'gradient' ? 'bg-blue-500' : 'bg-gray-500')}
+        onClick={() => setBackgroundType('gradient')}
+      >
+        Gradient
+      </Button>
+      <Button
+        className={cn(backgroundType === 'image' ? 'bg-blue-500' : 'bg-gray-500')}
+        onClick={() => setBackgroundType('image')}
+      >
+        Image
+      </Button>
+      <Button
+        className={cn(backgroundType === 'transparent' ? 'bg-blue-500' : 'bg-gray-500')}
+        onClick={() => setBackgroundType('transparent')}
+      >
+        Transparent
+      </Button>
+      {randomBackgroundButton}
+    </div>
   );
   const backgroundColourPicker = (
     <BackgroundColourPicker backgroundColour={backgroundColour} onChangeBackgroundColour={handleChangeBackground} />
@@ -961,9 +968,9 @@ export const ScreenshotTool = () => {
       <label htmlFor="background-image-picker">Image</label>
       <div className="grid grid-cols-5 gap-2">
         {images.current.map((image, index) => (
-          <button
+          <Button
             key={index}
-            className="rounded-md text-white font-semibold"
+            className="p-0"
             onClick={() => {
               backgroundImage.current = image;
               setBackgroundImageSrc(image?.src ?? null);
@@ -976,7 +983,7 @@ export const ScreenshotTool = () => {
                 'border border-black': backgroundImageSrc === image.src,
               })}
             />
-          </button>
+          </Button>
         ))}
       </div>
     </div>
@@ -1109,6 +1116,7 @@ export const ScreenshotTool = () => {
       <input
         id="text-to-render-input"
         type="text"
+        autoComplete="off"
         value={textToRender ?? ''}
         className="border border-black px-1"
         onChange={(event) => setTextToRender(event.target.value)}
@@ -1142,8 +1150,7 @@ export const ScreenshotTool = () => {
     </div>
   );
   const centerImageButton = (
-    <button
-      className="bg-blue-500 rounded-md px-4 py-2 text-white font-semibold"
+    <Button
       onClick={() => {
         if (!image) return;
         centerImage(canvasRef, image, scale, position);
@@ -1151,7 +1158,7 @@ export const ScreenshotTool = () => {
       }}
     >
       Center Image
-    </button>
+    </Button>
   );
   const downloadButton = <DownloadCanvasButton canvasRef={canvasRef} />;
   const dropzone = (
@@ -1160,41 +1167,64 @@ export const ScreenshotTool = () => {
     </div>
   );
 
+  const hr = <hr className="border border-black" />;
+
   const sidebarItems = [
-    // Background colour
-    colourOrGradientToggle,
-    randomBackgroundButton,
+    // Background type
+    backgroundTypeButtons,
+
+    hr,
+
+    // Background types
     backgroundType === 'colour' && backgroundColourPicker,
     backgroundType === 'gradient' && backgroundGradientPicker,
     backgroundType === 'image' && backgroundImagePicker,
+
+    backgroundType !== 'transparent' && hr,
 
     // Shadow
     shadowColourPicker,
     shadowSizeSlider,
 
+    hr,
+
     // Corner radius
     cornerRadiusSlider,
+
+    hr,
 
     // Canvas ratio
     canvasRatioSelector,
 
+    hr,
+
     // Frame colour
     frameColourPicker,
+
+    hr,
 
     // Flare
     flareColourPicker,
     flareIntensitySlider,
 
+    hr,
+
     // Pattern
     patternPicker,
+
+    hr,
 
     // Text styling
     textToRenderInput,
     fontSizeSlider,
 
+    hr,
+
     // Image position
     imageSizeSlider,
     centerImageButton,
+
+    hr,
 
     // Download
     downloadButton,

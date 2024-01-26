@@ -1,4 +1,5 @@
 'use client';
+import { Button } from './button';
 import { DownloadCanvasButtonProps } from './screenshot-tool';
 
 /**
@@ -17,9 +18,5 @@ export const DownloadCanvasButton = ({ canvasRef }: DownloadCanvasButtonProps) =
     }
   };
 
-  return (
-    <button onClick={handleDownload} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-      Download PNG
-    </button>
-  );
+  return <Button onClick={handleDownload}>Download PNG</Button>;
 };

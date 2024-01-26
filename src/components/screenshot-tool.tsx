@@ -193,52 +193,38 @@ const draw = ({
   // Clear the main canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Add a background to the main canvas
-  const canvasWithBackground = new RenderPipeline(canvas, [
+  // Process the rendering pipeline
+  const backgroundCanvas = new RenderPipeline(canvas, [
     {
       backgroundType,
       backgroundColour,
       backgroundGradient,
       backgroundImage,
     },
+    (canvas) => {
+      // Draw the pattern to the main canvas
+      if (patterns.grid) drawGridPattern(canvas, 20, 'rgba(255, 255, 255, 0.5)');
+      if (patterns.dot) drawDotPattern(canvas, 5, 'rgba(255, 255, 255, 0.5)');
+      if (patterns.waves) drawWaves(canvas);
+
+      // Add lense flare to the center of the canvas
+      addLensFlareToCanvas({
+        canvas,
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        intensity: flareIntensity,
+        colour: flareColour,
+      });
+
+      return canvas;
+    },
   ]).render();
 
   // Draw the updated canvas to the main canvas
-  ctx.drawImage(canvasWithBackground, 0, 0, canvas.width, canvas.height);
-
-  // Draw the pattern to the main canvas
-  if (patterns.grid) drawGridPattern(canvas, 20, 'rgba(255, 255, 255, 0.5)');
-  if (patterns.dot) drawDotPattern(canvas, 5, 'rgba(255, 255, 255, 0.5)');
-  if (patterns.waves) drawWaves(canvas);
-
-  // Add lense flare to the center of the canvas
-  addLensFlareToCanvas({
-    canvas,
-    x: canvas.width / 2,
-    y: canvas.height / 2,
-    intensity: flareIntensity,
-    colour: flareColour,
-  });
+  ctx.drawImage(backgroundCanvas, 0, 0, canvas.width, canvas.height);
 
   // Stop here if there's no image
   if (!image) return;
-
-  // Process the image
-  const processedImage = new RenderPipeline(image, [
-    {
-      cornerRadius,
-    },
-    ...(frameColour
-      ? [
-          {
-            padding: 10,
-            backgroundType: 'colour' as const,
-            backgroundColour: frameColour === '#FFFFFF' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
-            cornerRadius,
-          },
-        ]
-      : []),
-  ]).render();
 
   // Setting shadow on the main canvas
   if (shadowColour && shadowBlur) {
@@ -276,8 +262,25 @@ const draw = ({
   position.x = Math.min(Math.max(position.x, 0), canvas.width - scaledImageWidth);
   position.y = Math.min(Math.max(position.y, 0), canvas.height - scaledImageHeight);
 
+  // Process the image
+  const imageCanvas = new RenderPipeline(image, [
+    {
+      cornerRadius,
+    },
+    ...(frameColour
+      ? [
+          {
+            padding: 10,
+            backgroundType: 'colour' as const,
+            backgroundColour: frameColour === '#FFFFFF' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+            cornerRadius,
+          },
+        ]
+      : []),
+  ]).render();
+
   // Draw the processed image to the main canvas
-  ctx.drawImage(processedImage, position.x, position.y, scaledImageWidth, scaledImageHeight);
+  ctx.drawImage(imageCanvas, position.x, position.y, scaledImageWidth, scaledImageHeight);
 };
 
 const GradientPicker = ({

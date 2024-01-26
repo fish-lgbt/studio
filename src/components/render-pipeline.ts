@@ -86,13 +86,34 @@ const modifyImageOrCanvas = ({
   return canvas;
 };
 
-type Pipeline = Omit<DrawImageWithRoundedCornersParams, 'source'>;
+type Params = Omit<DrawImageWithRoundedCornersParams, 'source'>;
+
+type PipelineFunction = (canvas: HTMLCanvasElement) => HTMLCanvasElement;
 
 export class RenderPipeline {
-  constructor(private source: HTMLImageElement | HTMLCanvasElement, private pipeline: Pipeline[]) {}
+  constructor(private source: HTMLCanvasElement | HTMLImageElement, private pipeline: (Params | PipelineFunction)[]) {}
 
   render() {
-    const result = this.pipeline.reduce((canvas, params) => modifyImageOrCanvas({ ...params, source: canvas }), this.source);
+    const result = this.pipeline.reduce((canvas, args) => {
+      if (typeof args === 'function') {
+        const pipelineFunction = args as PipelineFunction;
+        if (!(canvas instanceof HTMLCanvasElement)) {
+          const newCanvas = document.createElement('canvas');
+          newCanvas.width = canvas.width;
+          newCanvas.height = canvas.height;
+          const ctx = newCanvas.getContext('2d');
+          if (!ctx) {
+            throw new Error('Could not get canvas context');
+          }
+          ctx.drawImage(canvas, 0, 0);
+          canvas = newCanvas;
+        }
+        return pipelineFunction(canvas);
+      }
+
+      const params = args as Params;
+      return modifyImageOrCanvas({ ...params, source: canvas });
+    }, this.source);
     return result as HTMLCanvasElement;
   }
 }

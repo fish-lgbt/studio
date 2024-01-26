@@ -1,7 +1,7 @@
 type DrawImageWithRoundedCornersParams = {
   source: HTMLImageElement | HTMLCanvasElement; // Source image or canvas
 
-  backgroundType?: 'colour' | 'gradient' | 'image' | null; // Optional background type
+  backgroundType?: 'colour' | 'gradient' | 'image' | 'transparent' | null; // Optional background type
   backgroundColour?: string | null; // Optional background colour
   backgroundGradient?: string[] | null; // Optional colour stops for gradient background
   backgroundImage?: HTMLImageElement | HTMLCanvasElement | null; // Optional background image

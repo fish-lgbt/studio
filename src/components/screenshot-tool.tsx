@@ -153,7 +153,7 @@ type DrawParams = {
   position: Coordinates;
   shadowBlur: number;
   shadowColour: string | null;
-  backgroundType: 'colour' | 'gradient' | 'image' | null;
+  backgroundType: 'colour' | 'gradient' | 'image' | 'transparent' | null;
   backgroundColour: string | null;
   backgroundGradient: string[] | null;
   backgroundImage: HTMLImageElement | HTMLCanvasElement | null;
@@ -367,7 +367,7 @@ export const ScreenshotTool = () => {
   }>();
 
   // Backgrounds
-  const [backgroundType, setBackgroundType] = useState<'colour' | 'gradient' | 'image' | null>(
+  const [backgroundType, setBackgroundType] = useState<'colour' | 'gradient' | 'image' | 'transparent' | null>(
     (searchParams.backgroundType as 'colour' | 'gradient' | 'image') ?? ('image' as const),
   );
   const [backgroundColour, setBackgroundColour] = useState<string | null>(
@@ -828,7 +828,6 @@ export const ScreenshotTool = () => {
         maxHeight: `${canvasHeight / 2}px`,
         maxWidth: `${canvasWidth / 2}px`,
       }}
-      className="border border-white"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -863,6 +862,14 @@ export const ScreenshotTool = () => {
         onClick={() => setBackgroundType('image')}
       >
         Image
+      </button>
+      <button
+        className={`${
+          backgroundType === 'transparent' ? 'bg-blue-500' : 'bg-gray-500'
+        } rounded-md px-4 py-2 text-white font-semibold`}
+        onClick={() => setBackgroundType('transparent')}
+      >
+        Transparent
       </button>
     </div>
   );

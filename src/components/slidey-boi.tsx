@@ -10,6 +10,6 @@ export const SlideyBoi = ({ type: _type, id, label, value, ...passthrough }: Sli
         {value}
       </span>
     </div>
-    <input id={id} type="range" value={value} {...passthrough} />
+    <input className="accent-[#7e7e7e]" id={id} type="range" value={value} {...passthrough} />
   </div>
 );

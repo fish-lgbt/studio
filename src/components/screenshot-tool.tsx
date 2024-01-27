@@ -358,21 +358,37 @@ const GradientPicker = ({
   );
 };
 
-const canvasRatioToSize = (ratio: '16:9' | '4:3' | '1:1') => {
-  if (ratio === '16:9') {
-    return { width: 1920, height: 1080 };
-  }
+type CanvasRatio = '16:9' | '9:16' | '4:3' | '1:1' | 'twitter-banner';
 
-  if (ratio === '4:3') {
-    return { width: 1920, height: 1440 };
-  }
+const canvasRatios = {
+  '16:9': {
+    name: '16:9',
+    width: 1920,
+    height: 1080,
+  },
+  '9:16': {
+    name: '9:16',
+    width: 1080,
+    height: 1920,
+  },
+  '4:3': {
+    name: '4:3',
+    width: 1920,
+    height: 1440,
+  },
+  '1:1': {
+    name: '1:1',
+    width: 1080,
+    height: 1080,
+  },
+  'twitter-banner': {
+    name: 'Twitter Banner',
+    width: 1500,
+    height: 500,
+  },
+} satisfies Record<CanvasRatio, { name: string; width: number; height: number }>;
 
-  if (ratio === '1:1') {
-    return { width: 1080, height: 1080 };
-  }
-
-  return null;
-};
+const canvasRatioToSize = (ratio: CanvasRatio) => canvasRatios[ratio];
 
 const centerImage = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
@@ -401,7 +417,7 @@ export const ScreenshotTool = () => {
     shadowScale: number;
     scale: number;
     cornerRadius: number;
-    canvasRatio: '16:9' | '4:3' | '1:1';
+    canvasRatio: CanvasRatio;
     frameColour: string;
     autoCenter: boolean;
     flareIntensity: number;
@@ -433,9 +449,7 @@ export const ScreenshotTool = () => {
   const [shadowScale, setShadowScale] = useState(searchParams.shadowScale ? Number(searchParams.shadowScale) : 0);
   const [scale, setScale] = useState(searchParams.scale ? Number(searchParams.scale) : 100);
   const [cornerRadius, setCornerRadius] = useState(searchParams.cornerRadius ? Number(searchParams.cornerRadius) : 20);
-  const [canvasRatio, setCanvasRatio] = useState<'16:9' | '4:3' | '1:1'>(
-    (searchParams.canvasRatio as '16:9' | '4:3' | '1:1') ?? '16:9',
-  );
+  const [canvasRatio, setCanvasRatio] = useState<CanvasRatio>((searchParams.canvasRatio as CanvasRatio) ?? '16:9');
   const [frameColour, setFrameColour] = useState<string>(
     searchParams.frameColour ? `#${searchParams.frameColour}` : '#FFFFFF',
   );
@@ -1031,11 +1045,13 @@ export const ScreenshotTool = () => {
       <select
         id="canvas-ratio-selector"
         value={canvasRatio}
-        onChange={(event) => setCanvasRatio(event.target.value as '16:9' | '4:3' | '1:1')}
+        onChange={(event) => setCanvasRatio(event.target.value as CanvasRatio)}
       >
-        <option value="16:9">16:9</option>
-        <option value="4:3">4:3</option>
-        <option value="1:1">1:1</option>
+        {Object.entries(canvasRatios).map(([canvasRatio, { name }]) => (
+          <option key={canvasRatio} value={canvasRatio}>
+            {name}
+          </option>
+        ))}
       </select>
     </div>
   );

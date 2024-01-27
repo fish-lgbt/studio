@@ -501,7 +501,7 @@ const Sidebar = ({ disabled, groups, name }: SidebarProps) => {
     <div className="relative h-fit self-center text-black dark:text-white text-sm w-full">
       {!disabled && <div className="z-10 w-full h-full bg-black bg-opacity-80 absolute rounded cursor-not-allowed" />}
       <div className="bg-white dark:bg-[#181818] border border-[#14141414] flex flex-col gap-2 h-fit w-full rounded">
-        <div className="flex flex-row w-full p-2 justify-between border-[#dadada] bg-[#0e0e0e]">
+        <div className="flex flex-row w-full p-2 justify-between border-[#dadada] bg-[#f1f1f3] dark:bg-[#0e0e0e]">
           <span className="font-semibold">{name}</span>
           {/* <Button
             onClick={() => {

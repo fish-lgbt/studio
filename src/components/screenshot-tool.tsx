@@ -93,7 +93,7 @@ const drawWaves = (canvas: HTMLCanvasElement) => {
   for (let i = 0; i < lines; i++) {
     for (let x = 0; x <= canvas.width; x += 10) {
       // Calculate the y position of the line at point x
-      const y = waveAmplitude * Math.sin(x * waveFrequency + i * waveFrequency) + (canvas.height / lines) * i;
+      const y = waveAmplitude * Math.sin(x * waveFrequency + i * waveFrequency) + ((canvas.height * 1.2) / lines) * i;
       if (x === 0) {
         ctx.moveTo(x, y);
       } else {

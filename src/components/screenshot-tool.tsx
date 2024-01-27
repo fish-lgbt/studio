@@ -76,7 +76,7 @@ const drawGridPattern = (canvas: HTMLCanvasElement, gridSize: number, color: str
   ctx.stroke();
 };
 
-function drawWaves(canvas: HTMLCanvasElement) {
+const drawWaves = (canvas: HTMLCanvasElement) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
@@ -85,7 +85,7 @@ function drawWaves(canvas: HTMLCanvasElement) {
   const waveFrequency = 0.1; // The frequency of the wave
 
   // Set the color of the lines
-  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
   ctx.lineWidth = 2;
 
   ctx.beginPath(); // Begin a new path for the combined lines
@@ -103,7 +103,7 @@ function drawWaves(canvas: HTMLCanvasElement) {
   }
 
   ctx.stroke(); // Stroke the path once after all lines are defined
-}
+};
 
 const drawDotPattern = (canvas: HTMLCanvasElement, dotSize: number, colour: string = '#000'): void => {
   const ctx = canvas.getContext('2d');
@@ -391,6 +391,14 @@ const canvasRatios = {
 } satisfies Record<CanvasRatio, { name: string; width: number; height: number }>;
 
 const canvasRatioToSize = (ratio: CanvasRatio) => canvasRatios[ratio];
+
+const rgbaToHex = (rgba: string) => {
+  const [r, g, b] = rgba
+    .slice(5, -1)
+    .split(',')
+    .map((value) => Number(value.trim()));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
 
 const centerImage = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
@@ -716,6 +724,40 @@ export const ScreenshotTool = () => {
     setBackgroundColour(color);
   };
 
+  const getPrimaryColorsFromCanvas = (canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    if (!context) return [[0, 0, 0]];
+
+    const imageData = context.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const colorMap: {
+      [key: string]: number;
+    } = {};
+
+    // Iterate over every pixel to count the occurrence of each color
+    for (let i = 0; i < data.length; i += 4 * 1000) {
+      // Convert the RGB to a string to use as a key (ignoring alpha channel)
+      const color = `${data[i]}-${data[i + 1]}-${data[i + 2]}`;
+
+      if (colorMap[color]) {
+        colorMap[color]++;
+      } else {
+        colorMap[color] = 1;
+      }
+    }
+
+    // Determine the most frequent colors
+    const coloursByFrequency = Object.keys(colorMap).sort((a, b) => colorMap[b] - colorMap[a]);
+
+    // Return the most frequent colors as an array of RGB values
+    // E.g. [[255, 255, 255], [0, 0, 0]]
+    return coloursByFrequency.map((colour) => colour.split('-').map((num) => parseInt(num, 10)));
+  };
+
   const onDrop = useCallback(
     (file: File[]) => {
       const canvas = canvasRef.current;
@@ -724,6 +766,26 @@ export const ScreenshotTool = () => {
       loadImage(URL.createObjectURL(file[0])).then((loadedImage) => {
         setImage(loadedImage);
         centerImage(canvasRef, loadedImage, scale, position);
+
+        const imageCanvas = document.createElement('canvas');
+        imageCanvas.width = loadedImage.width;
+        imageCanvas.height = loadedImage.height;
+        const context = imageCanvas.getContext('2d');
+        if (!context) return;
+
+        context.drawImage(loadedImage, 0, 0);
+        const colours = getPrimaryColorsFromCanvas(imageCanvas);
+        const colour = colours[0];
+        setBackgroundColour(rgbaToHex(`rgb(${colour[0]}, ${colour[1]}, ${colour[2]})`));
+
+        const gradientColours = colours
+          .slice(colours.length / 2)
+          .map((colour) => rgbaToHex(`rgb(${colour[0]}, ${colour[1]}, ${colour[2]})`));
+        setbackgroundGradient([
+          gradientColours[0],
+          gradientColours[Math.floor(gradientColours.length * 0.8)],
+          gradientColours[gradientColours.length - 1],
+        ]);
       });
     },
     [scale],

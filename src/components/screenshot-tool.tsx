@@ -522,7 +522,9 @@ const Sidebar = ({ disabled, groups, name }: SidebarProps) => {
                   {item}
                 </div>
               ))}
-              {groupIndex < groups.filter(Boolean).length - 1 && <hr className="border-[0.5px] border-[#2a2a2a]" />}
+              {groupIndex < groups.filter(Boolean).length - 1 && (
+                <hr className="border-[0.5px] border-[#dbdbdb] dark:border-[#2a2a2a]" />
+              )}
             </div>
           );
         })}

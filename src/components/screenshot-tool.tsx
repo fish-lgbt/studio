@@ -332,13 +332,39 @@ const draw = ({
     const positionAdjustmentY = stackSpace * shearFactor;
 
     // Draw the image to the main canvas
-    ctx.drawImage(
-      imageCanvas,
-      position.x + positionAdjustmentX,
-      position.y - positionAdjustmentY,
-      scaledImageWidth * scaleAdjustment,
-      scaledImageHeight * scaleAdjustment,
-    );
+    if (imageRotation) {
+      // Convert degrees to radians
+      const angleInRadians = (imageRotation * Math.PI) / 180;
+
+      // Translate context to image position
+      ctx.translate(
+        position.x + positionAdjustmentX + scaledImageWidth / 2,
+        position.y + positionAdjustmentY + scaledImageHeight / 2,
+      );
+
+      // Rotate context
+      ctx.rotate(angleInRadians);
+
+      // Draw image centered on the translated and rotated context
+      ctx.drawImage(
+        imageCanvas,
+        -scaledImageWidth / 2,
+        -scaledImageHeight / 2,
+        scaledImageWidth * scaleAdjustment,
+        scaledImageHeight * scaleAdjustment,
+      );
+
+      // Reset transformation matrix to the identity matrix
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    } else {
+      ctx.drawImage(
+        imageCanvas,
+        position.x + positionAdjustmentX,
+        position.y - positionAdjustmentY,
+        scaledImageWidth * scaleAdjustment,
+        scaledImageHeight * scaleAdjustment,
+      );
+    }
   }
 
   // // Draw the stack of images

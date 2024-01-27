@@ -193,6 +193,11 @@ type DrawParams = {
   textPositionX: number;
   textPositionY: number;
   stackCount: number;
+  imageFlip: {
+    horizontal: boolean;
+    vertical: boolean;
+  };
+  imageRotation: number;
 };
 
 const draw = ({
@@ -216,6 +221,8 @@ const draw = ({
   textPositionX,
   textPositionY,
   stackCount,
+  imageFlip,
+  imageRotation,
 }: DrawParams) => {
   const ctx = canvas?.getContext('2d');
 
@@ -322,7 +329,7 @@ const draw = ({
     const shearFactor = stackCount - i;
     const scaleAdjustment = 0.9 + (0.1 * (i - shearFactor)) / stackCount;
     const positionAdjustmentX = (scaledImageWidth - scaledImageWidth * scaleAdjustment) / 2;
-    const positionAdjustmentY = 10 * shearFactor;
+    const positionAdjustmentY = stackSpace * shearFactor;
 
     // Draw the image to the main canvas
     ctx.drawImage(
@@ -349,7 +356,26 @@ const draw = ({
   //     scaledImageHeight * scaleAdjustment,
   //   );
   // }
-  ctx.drawImage(imageCanvas, position.x, position.y, scaledImageWidth, scaledImageHeight);
+
+  // Draw the image to the main canvas
+  if (imageRotation) {
+    // Convert degrees to radians
+    const angleInRadians = (imageRotation * Math.PI) / 180;
+
+    // Translate context to image position
+    ctx.translate(position.x + scaledImageWidth / 2, position.y + scaledImageHeight / 2);
+
+    // Rotate context
+    ctx.rotate(angleInRadians);
+
+    // Draw image centered on the translated and rotated context
+    ctx.drawImage(imageCanvas, -scaledImageWidth / 2, -scaledImageHeight / 2, scaledImageWidth, scaledImageHeight);
+
+    // Reset transformation matrix to the identity matrix
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  } else {
+    ctx.drawImage(imageCanvas, position.x, position.y, scaledImageWidth, scaledImageHeight);
+  }
 
   // Reset shadow on the main canvas
   ctx.shadowColor = 'transparent';
@@ -465,30 +491,6 @@ const centerImage = (
   };
 };
 
-const ChevronUpIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-6 w-6 stroke-current text-black dark:text-white"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 9l-7 7-7-7" />
-  </svg>
-);
-
-const ChevronDownIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-6 w-6 stroke-current text-black dark:text-white"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 15l7-7 7 7" />
-  </svg>
-);
-
 type SidebarProps = {
   groups: (false | (false | JSX.Element)[])[];
   disabled: boolean;
@@ -496,20 +498,12 @@ type SidebarProps = {
 };
 
 const Sidebar = ({ disabled, groups, name }: SidebarProps) => {
-  // const [showSidebar, setShowSidebar] = useState(false);
   return (
     <div className="relative h-fit self-center text-black dark:text-white text-sm w-full">
       {!disabled && <div className="z-10 w-full h-full bg-black bg-opacity-80 absolute rounded cursor-not-allowed" />}
       <div className="bg-white dark:bg-[#181818] border border-[#14141414] flex flex-col gap-2 h-fit w-full rounded">
-        <div className="flex flex-row w-full p-2 justify-between border-[#dadada] bg-[#f1f1f3] dark:bg-[#0e0e0e]">
+        <div className="flex flex-row w-full p-2 border-[#dadada] bg-[#f1f1f3] dark:bg-[#0e0e0e]">
           <span className="font-semibold">{name}</span>
-          {/* <Button
-            onClick={() => {
-              setShowSidebar(!showSidebar);
-            }}
-          >
-            {showSidebar ? <ChevronDownIcon /> : <ChevronUpIcon />}
-          </Button> */}
         </div>
         {groups.filter(Boolean).map((group, groupIndex) => {
           if (!group) return null;
@@ -578,7 +572,7 @@ export const ScreenshotTool = () => {
   const [shadowScale, setShadowScale] = useState(searchParams.shadowScale ? Number(searchParams.shadowScale) : 0);
   const [scale, setScale] = useState(searchParams.scale ? Number(searchParams.scale) : 100);
   const [cornerRadius, setCornerRadius] = useState(searchParams.cornerRadius ? Number(searchParams.cornerRadius) : 20);
-  const [canvasRatio, setCanvasRatio] = useState<CanvasRatio>((searchParams.canvasRatio as CanvasRatio) ?? '16:9');
+  const [canvasRatio, setCanvasRatio] = useState<CanvasRatio>((searchParams.canvasRatio as CanvasRatio) ?? '1:1');
   const [frameColour, setFrameColour] = useState<string>(
     searchParams.frameColour ? `#${searchParams.frameColour}` : '#FFFFFF',
   );
@@ -601,6 +595,11 @@ export const ScreenshotTool = () => {
   const [textPositionX, setTextPositionX] = useState(searchParams.textPositionX ? Number(searchParams.textPositionX) : 0);
   const [textPositionY, setTextPositionY] = useState(searchParams.textPositionY ? Number(searchParams.textPositionY) : 0);
   const [stackCount, setStackCount] = useState(0);
+  const [imageFlip, setImageFlip] = useState({
+    horizontal: false,
+    vertical: false,
+  });
+  const [imageRotation, setImageRotation] = useState(0);
 
   // User uploaded image
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -657,6 +656,8 @@ export const ScreenshotTool = () => {
     fontSize,
     textPositionX,
     textPositionY,
+    imageFlip,
+    imageRotation,
   ]);
 
   useEffect(() => {
@@ -1035,6 +1036,8 @@ export const ScreenshotTool = () => {
         textPositionX,
         textPositionY,
         stackCount,
+        imageFlip,
+        imageRotation,
       });
       requestRef.current = requestAnimationFrame(redraw);
     };
@@ -1066,6 +1069,8 @@ export const ScreenshotTool = () => {
     textPositionX,
     textPositionY,
     stackCount,
+    imageFlip,
+    imageRotation,
   ]);
 
   // Add event listeners for mouse up and mouse leave
@@ -1180,6 +1185,135 @@ export const ScreenshotTool = () => {
           </Button>
         ))}
       </div>
+    </div>
+  );
+  const RotateIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      className="stroke-black dark:stroke-white py-1"
+    >
+      <path
+        stroke="currentColour"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M11.5 20.5a8.5 8.5 0 117.37-4.262M22.5 15l-3.63 1.238m-1.695-3.855l1.354 3.971.34-.116"
+      ></path>
+    </svg>
+  );
+  const FlipHorizontalIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      fill="none"
+      viewBox="0 0 24 24"
+      className="stroke-black dark:stroke-white py-1"
+    >
+      <path
+        stroke="currentColour"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M5 14h14v2L5 21v-7zM5 10h14V8L5 3v7z"
+      ></path>
+    </svg>
+  );
+  const FlipVerticalIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      fill="none"
+      viewBox="0 0 24 24"
+      className="stroke-black dark:stroke-white py-1"
+    >
+      <path
+        stroke="currentColour"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M10 19V5H8L3 19h7zM14 19V5h2l5 14h-7z"
+      ></path>
+    </svg>
+  );
+  const flipImage = (
+    image: HTMLImageElement,
+    imageFlip: {
+      horizontal: boolean;
+      vertical: boolean;
+    },
+  ) => {
+    if (!image) return null;
+
+    // Flip the image if necessary
+    if (imageFlip.horizontal || imageFlip.vertical) {
+      const flippedImageCanvas = document.createElement('canvas');
+      flippedImageCanvas.width = image.width;
+      flippedImageCanvas.height = image.height;
+      const flippedImageCtx = flippedImageCanvas.getContext('2d');
+      if (!flippedImageCtx) return null;
+      if (imageFlip.horizontal) {
+        flippedImageCtx.translate(image.width, 0);
+        flippedImageCtx.scale(-1, 1);
+      }
+      if (imageFlip.vertical) {
+        flippedImageCtx.translate(0, image.height);
+        flippedImageCtx.scale(1, -1);
+      }
+      flippedImageCtx.drawImage(image, 0, 0);
+      const newImage = new Image(flippedImageCanvas.width, flippedImageCanvas.height);
+      newImage.src = flippedImageCanvas.toDataURL();
+      return newImage;
+    }
+
+    return image;
+  };
+
+  const imageRotationButtons = (
+    <div className="flex flex-row gap-2">
+      <Button
+        onClick={() => {
+          setImage((image) => {
+            if (!image) return null;
+            return flipImage(image, {
+              horizontal: true,
+              vertical: false,
+            });
+          });
+        }}
+      >
+        <FlipHorizontalIcon />
+      </Button>
+      <Button
+        onClick={() => {
+          setImage((image) => {
+            if (!image) return null;
+            return flipImage(image, {
+              horizontal: false,
+              vertical: true,
+            });
+          });
+        }}
+      >
+        <FlipVerticalIcon />
+      </Button>
+      <Button
+        onClick={() => {
+          setImageRotation((imageRotation) => {
+            if (imageRotation >= 360) {
+              return 0;
+            }
+
+            return imageRotation + 10;
+          });
+        }}
+      >
+        <RotateIcon />
+      </Button>
     </div>
   );
   const shadowColourPicker = (
@@ -1398,6 +1532,9 @@ export const ScreenshotTool = () => {
 
   // Image sidebar
   const imageSidebar: (false | (false | JSX.Element)[])[] = [
+    // Flip
+    [imageRotationButtons],
+
     // Shadow
     [shadowColourPicker, shadowSizeSlider],
 

@@ -12,7 +12,7 @@ export const BackgroundColourPicker = ({ backgroundColour, onChangeBackgroundCol
     return null;
   }
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex justify-between gap-2">
       <label htmlFor="background-colour">Background Colour</label>
       <input
         id="background-colour"

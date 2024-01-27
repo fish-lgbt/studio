@@ -10,11 +10,20 @@ import { cn } from '@/cn';
 import { hslToHex } from './hsl-to-hex';
 import { useSearchParams } from '@/hooks/use-search-params';
 import { Button } from './button';
+import { SlideyBoi } from './slidey-boi';
+import { PickyPal } from './picky-pal';
 
 const RefreshIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    fill="none"
+    viewBox="0 0 24 24"
+    className="stroke-black dark:stroke-white"
+  >
     <path
-      stroke="#FFF"
+      stroke="currentColour"
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth="2"
@@ -183,6 +192,7 @@ type DrawParams = {
   fontSize: number;
   textPositionX: number;
   textPositionY: number;
+  stackCount: number;
 };
 
 const draw = ({
@@ -205,6 +215,7 @@ const draw = ({
   fontSize,
   textPositionX,
   textPositionY,
+  stackCount,
 }: DrawParams) => {
   const ctx = canvas?.getContext('2d');
 
@@ -301,7 +312,41 @@ const draw = ({
     ctx.shadowBlur = shadowBlur;
   }
 
-  // Draw the processed image to the main canvas
+  // const stackCount = 10;
+  const STACK_SPACE = 10;
+
+  // Draw the stack of images
+  for (let i = 0; i < stackCount; i++) {
+    const shearFactor = stackCount - i;
+    // Calculate scale and position adjustments based on the current iteration
+    const scaleAdjustment = 0.9 + (0.1 * (i - shearFactor)) / stackCount;
+    const positionAdjustmentX = (scaledImageWidth - scaledImageWidth * scaleAdjustment) / 2;
+    const positionAdjustmentY = STACK_SPACE * shearFactor;
+
+    ctx.drawImage(
+      imageCanvas,
+      position.x + positionAdjustmentX, //  3 is a magic value i guess
+      position.y - positionAdjustmentY,
+      scaledImageWidth * scaleAdjustment,
+      scaledImageHeight * scaleAdjustment,
+    );
+  }
+
+  // // Draw the stack of images
+  // for (let i = stackCount; i > 0; i--) {
+  //   // Calculate scale and position adjustments based on the current iteration
+  //   const scaleAdjustment = 0.9 + (0.1 * (stackCount - i)) / stackCount;
+  //   const positionAdjustmentX = (1 - scaleAdjustment) * 2 * scaledImageWidth;
+  //   const positionAdjustmentY = (1 - scaleAdjustment) * scaledImageHeight;
+
+  //   ctx.drawImage(
+  //     imageCanvas,
+  //     position.x + positionAdjustmentX,
+  //     position.y - positionAdjustmentY,
+  //     scaledImageWidth * scaleAdjustment,
+  //     scaledImageHeight * scaleAdjustment,
+  //   );
+  // }
   ctx.drawImage(imageCanvas, position.x, position.y, scaledImageWidth, scaledImageHeight);
 
   // Reset shadow on the main canvas
@@ -336,26 +381,28 @@ const GradientPicker = ({
 }) => {
   if (!backgroundGradient) return null;
   return (
-    <div className="flex flex-row gap-2">
+    <div className="flex flex-row gap-2 justify-between">
       <label htmlFor="gradient-picker">Gradient</label>
-      {backgroundGradient.map((colourStop, index) => (
-        <input
-          key={index}
-          id={`gradient-picker-${index}`}
-          type="color"
-          value={colourStop}
-          onChange={(event) => {
-            onChange(
-              backgroundGradient.map((colourStop, colourStopIndex) => {
-                if (colourStopIndex === index) {
-                  return event.target.value;
-                }
-                return colourStop;
-              }),
-            );
-          }}
-        />
-      ))}
+      <div className="flex flex-row gap-1">
+        {backgroundGradient.map((colourStop, index) => (
+          <input
+            key={index}
+            id={`gradient-picker-${index}`}
+            type="color"
+            value={colourStop}
+            onChange={(event) => {
+              onChange(
+                backgroundGradient.map((colourStop, colourStopIndex) => {
+                  if (colourStopIndex === index) {
+                    return event.target.value;
+                  }
+                  return colourStop;
+                }),
+              );
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 };
@@ -483,6 +530,7 @@ export const ScreenshotTool = () => {
   const [fontSize, setFontSize] = useState(searchParams.fontSize ? Number(searchParams.fontSize) : 100);
   const [textPositionX, setTextPositionX] = useState(searchParams.textPositionX ? Number(searchParams.textPositionX) : 0);
   const [textPositionY, setTextPositionY] = useState(searchParams.textPositionY ? Number(searchParams.textPositionY) : 0);
+  const [stackCount, setStackCount] = useState(0);
 
   // User uploaded image
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -916,6 +964,7 @@ export const ScreenshotTool = () => {
         fontSize,
         textPositionX,
         textPositionY,
+        stackCount,
       });
       requestRef.current = requestAnimationFrame(redraw);
     };
@@ -946,6 +995,7 @@ export const ScreenshotTool = () => {
     fontSize,
     textPositionX,
     textPositionY,
+    stackCount,
   ]);
 
   // Add event listeners for mouse up and mouse leave
@@ -1015,28 +1065,16 @@ export const ScreenshotTool = () => {
   );
   const backgroundTypeButtons = (
     <div className="flex flex-row gap-2">
-      <Button
-        className={cn(backgroundType === 'colour' ? 'bg-blue-500' : 'bg-gray-500')}
-        onClick={() => setBackgroundType('colour')}
-      >
+      <Button active={backgroundType === 'colour'} onClick={() => setBackgroundType('colour')}>
         Colour
       </Button>
-      <Button
-        className={cn(backgroundType === 'gradient' ? 'bg-blue-500' : 'bg-gray-500')}
-        onClick={() => setBackgroundType('gradient')}
-      >
+      <Button active={backgroundType === 'gradient'} onClick={() => setBackgroundType('gradient')}>
         Gradient
       </Button>
-      <Button
-        className={cn(backgroundType === 'image' ? 'bg-blue-500' : 'bg-gray-500')}
-        onClick={() => setBackgroundType('image')}
-      >
+      <Button active={backgroundType === 'image'} onClick={() => setBackgroundType('image')}>
         Image
       </Button>
-      <Button
-        className={cn(backgroundType === 'transparent' ? 'bg-blue-500' : 'bg-gray-500')}
-        onClick={() => setBackgroundType('transparent')}
-      >
+      <Button active={backgroundType === 'transparent'} onClick={() => setBackgroundType('transparent')}>
         Transparent
       </Button>
       {randomBackgroundButton}
@@ -1070,7 +1108,7 @@ export const ScreenshotTool = () => {
               src={image.src}
               alt={`Background image #${index}`}
               className={cn('w-[48px] h-[48px] object-cover', {
-                'border border-black': backgroundImageSrc === image.src,
+                'border border-black dark:border-white': backgroundImageSrc === image.src,
               })}
             />
           </Button>
@@ -1079,7 +1117,7 @@ export const ScreenshotTool = () => {
     </div>
   );
   const shadowColourPicker = (
-    <div className="flex flex-row gap-2">
+    <div className="flex flex-row gap-2 justify-between">
       <label htmlFor="shadow-colour-picker">Shadow Colour</label>
       <input
         id="shadow-colour-picker"
@@ -1090,63 +1128,69 @@ export const ScreenshotTool = () => {
     </div>
   );
   const shadowSizeSlider = (
-    <div className="flex flex-row gap-2">
-      <label htmlFor="shadow-size-slider">Shadow Size</label>
-      <input
-        id="shadow-size-slider"
-        type="range"
-        min="0"
-        max="100"
-        value={shadowScale}
-        onChange={(event) => setShadowScale(Number(event.target.value))}
-      />
-    </div>
+    <SlideyBoi
+      id="shadow-size-slider"
+      label="Shadow Size"
+      type="range"
+      min="0"
+      max="100"
+      value={shadowScale}
+      onChange={(event) => setShadowScale(Number(event.target.value))}
+    />
   );
   const cornerRadiusSlider = (
-    <div className="flex flex-row gap-2">
-      <label htmlFor="corner-radius-slider">Corner Radius</label>
-      <input
-        id="corner-radius-slider"
-        type="range"
-        min="0"
-        max="50"
-        value={cornerRadius}
-        onChange={(event) => setCornerRadius(Number(event.target.value))}
-      />
-    </div>
+    <SlideyBoi
+      id="corner-radius-slider"
+      label="Corner Radius"
+      type="range"
+      min="0"
+      max="50"
+      value={cornerRadius}
+      onChange={(event) => setCornerRadius(Number(event.target.value))}
+    />
   );
+
   const canvasRatioSelector = (
-    <div className="flex flex-row gap-2">
-      <label htmlFor="canvas-ratio-selector">Canvas Ratio</label>
-      <select
-        id="canvas-ratio-selector"
-        value={canvasRatio}
-        onChange={(event) => setCanvasRatio(event.target.value as CanvasRatio)}
-      >
-        {Object.entries(canvasRatios).map(([canvasRatio, { name }]) => (
-          <option key={canvasRatio} value={canvasRatio}>
-            {name}
-          </option>
-        ))}
-      </select>
-    </div>
+    <PickyPal
+      id="canvas-ratio-selector"
+      label="Canvas Ratio"
+      value={canvasRatio}
+      onChange={(event) => setCanvasRatio(event.target.value as CanvasRatio)}
+      options={Object.entries(canvasRatios).map(([canvasRatio, { name }]) => ({
+        key: name,
+        value: canvasRatio,
+      }))}
+    />
   );
+
+  const frameColours = [
+    {
+      name: 'None',
+      colour: '',
+    },
+    {
+      name: 'Black',
+      colour: '#ffffff',
+    },
+    {
+      name: 'White',
+      colour: '#000000',
+    },
+  ];
   const frameColourPicker = (
-    <div className="flex flex-row gap-2">
-      <label htmlFor="frame-colour-picker">Frame Colour</label>
-      <select
-        id="frame-colour-picker"
-        value={frameColour ?? 'None'}
-        onChange={(event) => setFrameColour(event.target.value)}
-      >
-        <option value="">None</option>
-        <option value="#FFFFFF">White</option>
-        <option value="#000000">Black</option>
-      </select>
-    </div>
+    <PickyPal
+      id="frame-colour-picker"
+      label="Frame Colour"
+      value={frameColour}
+      onChange={(event) => setFrameColour(event.target.value)}
+      options={frameColours.map(({ name, colour }) => ({
+        key: name,
+        value: colour,
+      }))}
+    />
   );
   const flareColourPicker = (
-    <div className="flex flex-row gap-2">
+    <div className="flex flex-row gap-2 justify-between">
       <label htmlFor="flare-colour-picker">Flare Colour</label>
       <input
         id="flare-colour-picker"
@@ -1157,115 +1201,104 @@ export const ScreenshotTool = () => {
     </div>
   );
   const flareIntensitySlider = (
-    <div className="flex flex-row gap-2">
-      <label htmlFor="flare-intensity-slider">Flare Intensity</label>
-      <input
-        id="flare-intensity-slider"
-        type="range"
-        min="0"
-        max="1000"
-        value={flareIntensity}
-        onChange={(event) => setFlareIntensity(Number(event.target.value))}
-      />
-    </div>
+    <SlideyBoi
+      id="flare-intensity-slider"
+      label="Flare Intensity"
+      type="range"
+      min="0"
+      max="1000"
+      value={flareIntensity}
+      onChange={(event) => setFlareIntensity(Number(event.target.value))}
+    />
   );
   const patternPicker = (
-    <div className="flex flex-row gap-2">
+    <div className="flex flex-row gap-2 justify-between">
       <label htmlFor="pattern-picker">Pattern</label>
-      {/* // Input checkbox for each pattern type */}
-      <div className="flex flex-row gap-2">
-        <input
-          id="grid"
-          type="checkbox"
-          checked={patterns.grid}
-          onChange={(event) => setPatterns({ ...patterns, grid: event.target.checked })}
-        />
-        <label htmlFor="grid">Grid</label>
-      </div>
-      <div className="flex flex-row gap-2">
-        <input
-          id="dot"
-          type="checkbox"
-          checked={patterns.dot}
-          onChange={(event) => setPatterns({ ...patterns, dot: event.target.checked })}
-        />
-        <label htmlFor="dot">Dot</label>
-      </div>
-      <div className="flex flex-row gap-2">
-        <input
-          id="waves"
-          type="checkbox"
-          checked={patterns.waves}
-          onChange={(event) => setPatterns({ ...patterns, waves: event.target.checked })}
-        />
-        <label htmlFor="waves">Waves</label>
+      <div className="flex flex-row gap-1">
+        <div className="flex flex-row gap-2 justify-between">
+          <input
+            id="grid"
+            type="checkbox"
+            checked={patterns.grid}
+            onChange={(event) => setPatterns({ ...patterns, grid: event.target.checked })}
+          />
+          <label htmlFor="grid">Grid</label>
+        </div>
+        <div className="flex flex-row gap-2 justify-between">
+          <input
+            id="dot"
+            type="checkbox"
+            checked={patterns.dot}
+            onChange={(event) => setPatterns({ ...patterns, dot: event.target.checked })}
+          />
+          <label htmlFor="dot">Dot</label>
+        </div>
+        <div className="flex flex-row gap-2 justify-between">
+          <input
+            id="waves"
+            type="checkbox"
+            checked={patterns.waves}
+            onChange={(event) => setPatterns({ ...patterns, waves: event.target.checked })}
+          />
+          <label htmlFor="waves">Waves</label>
+        </div>
       </div>
     </div>
   );
   const textToRenderInput = (
-    <div className="flex flex-row gap-2">
+    <div className="flex flex-row gap-2 justify-between">
       <label htmlFor="text-to-render-input">Text</label>
       <input
         id="text-to-render-input"
+        className="px-2 py-1 border bg-[#f1f1f3] dark:bg-[#222327] border-[#e4e4e7] dark:border-[#2e2e2e] rounded-sm text-[#2e2e2e] dark:text-[#f1f1f3]"
         type="text"
-        autoComplete="off"
         value={textToRender ?? ''}
-        className="border border-black px-1"
         onChange={(event) => setTextToRender(event.target.value)}
       />
     </div>
   );
   const textPositionXSlider = (
-    <div className="flex flex-row gap-2">
-      <label htmlFor="text-position-x">Text Position X</label>
-      <input
-        id="text-position-x"
-        type="range"
-        min={-canvasWidth / 2}
-        max={canvasWidth / 2}
-        value={textPositionX}
-        onChange={(event) => setTextPositionX(Number(event.target.value))}
-      />
-    </div>
+    <SlideyBoi
+      id="text-position-x"
+      label="Text Position X"
+      type="range"
+      min={-canvasWidth / 2}
+      max={canvasWidth / 2}
+      value={textPositionX}
+      onChange={(event) => setTextPositionX(Number(event.target.value))}
+    />
   );
   const textPositionYSlider = (
-    <div className="flex flex-row gap-2">
-      <label htmlFor="text-position-y">Text Position Y</label>
-      <input
-        id="text-position-y"
-        type="range"
-        min={-canvasHeight / 2}
-        max={canvasHeight / 2}
-        value={textPositionY}
-        onChange={(event) => setTextPositionY(Number(event.target.value))}
-      />
-    </div>
+    <SlideyBoi
+      id="text-position-y"
+      label="Text Position Y"
+      min={-canvasHeight / 2}
+      max={canvasHeight / 2}
+      value={textPositionY}
+      onChange={(event) => setTextPositionY(Number(event.target.value))}
+    />
   );
   const fontSizeSlider = (
-    <div className="flex flex-row gap-2">
-      <label htmlFor="font-size-slider">Font Size</label>
-      <input
-        id="font-size-slider"
-        type="range"
-        min="1"
-        max="100"
-        value={fontSize}
-        onChange={(event) => setFontSize(Number(event.target.value))}
-      />
-    </div>
+    <SlideyBoi
+      id="font-size-slider"
+      label="Font Size"
+      type="range"
+      min="1"
+      max="100"
+      value={fontSize}
+      onChange={(event) => setFontSize(Number(event.target.value))}
+    />
   );
   const imageSizeSlider = (
-    <div className="flex flex-row gap-2">
-      <label htmlFor="image-size-slider">Image Size</label>
-      <input
-        id="image-size-slider"
-        type="range"
-        min="1"
-        max="100"
-        value={scale}
-        onChange={(event) => setScale(Number(event.target.value))}
-      />
-    </div>
+    <SlideyBoi
+      id="image-size-slider"
+      label="Image Size"
+      type="range"
+      min="1"
+      max="100"
+      value={scale}
+      onChange={(event) => setScale(Number(event.target.value))}
+    />
   );
   const centerImageButton = (
     <Button
@@ -1278,6 +1311,17 @@ export const ScreenshotTool = () => {
       Center Image
     </Button>
   );
+  const stacksSlider = (
+    <SlideyBoi
+      id="stacks-slider"
+      label="Stacks"
+      type="range"
+      min="0"
+      max="10"
+      value={stackCount}
+      onChange={(event) => setStackCount(Number(event.target.value))}
+    />
+  );
   const downloadButton = <DownloadCanvasButton canvasRef={canvasRef} />;
   const dropzone = (
     <div className="absolute">
@@ -1285,78 +1329,70 @@ export const ScreenshotTool = () => {
     </div>
   );
 
-  const hr = <hr className="border border-black" />;
+  const hr = <hr className="border-[0.5px] border-[#2a2a2a]" />;
 
-  const sidebarItems = [
+  const sidebarGroups = [
     // Background type
-    backgroundTypeButtons,
-
-    hr,
+    [backgroundTypeButtons],
 
     // Background types
-    backgroundType === 'colour' && backgroundColourPicker,
-    backgroundType === 'gradient' && backgroundGradientPicker,
-    backgroundType === 'image' && backgroundImagePicker,
-
-    backgroundType !== 'transparent' && hr,
+    backgroundType !== 'transparent' && [
+      backgroundType === 'colour' && backgroundColourPicker,
+      backgroundType === 'gradient' && backgroundGradientPicker,
+      backgroundType === 'image' && backgroundImagePicker,
+    ],
 
     // Shadow
-    shadowColourPicker,
-    shadowSizeSlider,
-
-    hr,
+    [shadowColourPicker, shadowSizeSlider],
 
     // Corner radius
-    cornerRadiusSlider,
-
-    hr,
+    [cornerRadiusSlider],
 
     // Canvas ratio
-    canvasRatioSelector,
-
-    hr,
+    [canvasRatioSelector],
 
     // Frame colour
-    frameColourPicker,
-
-    hr,
+    [frameColourPicker],
 
     // Flare
-    flareColourPicker,
-    flareIntensitySlider,
-
-    hr,
+    [flareColourPicker, flareIntensitySlider],
 
     // Pattern
-    patternPicker,
-
-    hr,
+    [patternPicker],
 
     // Text styling
-    textToRenderInput,
-    textPositionXSlider,
-    textPositionYSlider,
-    fontSizeSlider,
-
-    hr,
+    [textToRenderInput, textPositionXSlider, textPositionYSlider, fontSizeSlider],
 
     // Image position
-    imageSizeSlider,
-    centerImageButton,
+    [imageSizeSlider, centerImageButton],
 
-    hr,
+    // Stacks
+    [stacksSlider],
 
     // Download
-    downloadButton,
+    [downloadButton],
   ];
 
   const sidebar = (
-    <div className="relative h-fit self-center">
+    <div className="relative h-fit self-center text-black dark:text-white text-sm">
       {!image && <div className="z-10 w-full h-full bg-black bg-opacity-80 absolute rounded cursor-not-allowed" />}
-      <div className="p-2 bg-white border flex flex-col gap-2 h-fit rounded">
-        {sidebarItems.map((item, index) => {
-          if (!item) return null;
-          return <div key={`item-${index}`}>{item}</div>;
+      <div className="bg-white dark:bg-[#181818] border border-[#14141414] flex flex-col gap-2 h-fit rounded">
+        {sidebarGroups.filter(Boolean).map((group, groupIndex) => {
+          if (!group) return null;
+          const items = group.filter(Boolean);
+
+          return (
+            <>
+              {items.map((item, index) => (
+                <>
+                  <div key={index} className={cn('p-2 justify-between')}>
+                    {item}
+                  </div>
+                </>
+              ))}
+              {groupIndex < sidebarGroups.filter(Boolean).length - 1 && hr}
+            </>
+          );
         })}
       </div>
     </div>

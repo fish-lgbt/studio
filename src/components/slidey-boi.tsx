@@ -48,7 +48,6 @@ export const SlideyBoi = ({ type: _type, id, label, value, onChange, ...passthro
             }}
             {...passthrough}
           />
-          <div className="invisible">{value}</div>
         </div>
       </div>
       <input className="accent-[#7e7e7e]" id={id} type="range" value={value} onChange={onChange} {...passthrough} />

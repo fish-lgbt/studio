@@ -181,6 +181,8 @@ type DrawParams = {
   };
   textToRender: string | null;
   fontSize: number;
+  textPositionX: number;
+  textPositionY: number;
 };
 
 const draw = ({
@@ -201,6 +203,8 @@ const draw = ({
   patterns,
   textToRender,
   fontSize,
+  textPositionX,
+  textPositionY,
 }: DrawParams) => {
   const ctx = canvas?.getContext('2d');
 
@@ -319,9 +323,7 @@ const draw = ({
     textCtx.fillText(textToRender, textCanvas.width / 2, textCanvas.height / 2);
 
     // Draw the text to the main canvas
-    const textX = (canvas.width - textCanvas.width) / 2;
-    const textY = (canvas.height - textCanvas.height) / 2;
-    ctx.drawImage(textCanvas, textX, textY);
+    ctx.drawImage(textCanvas, textPositionX, textPositionY);
   }
 };
 
@@ -427,6 +429,8 @@ export const ScreenshotTool = () => {
     patternsWaves: boolean;
     textToRender: string | null;
     fontSize: number;
+    textPositionX: number;
+    textPositionY: number;
   }>();
 
   // Backgrounds
@@ -469,6 +473,8 @@ export const ScreenshotTool = () => {
   });
   const [textToRender, setTextToRender] = useState<string | null>(searchParams.textToRender ?? null);
   const [fontSize, setFontSize] = useState(searchParams.fontSize ? Number(searchParams.fontSize) : 100);
+  const [textPositionX, setTextPositionX] = useState(searchParams.textPositionX ? Number(searchParams.textPositionX) : 0);
+  const [textPositionY, setTextPositionY] = useState(searchParams.textPositionY ? Number(searchParams.textPositionY) : 0);
 
   // User uploaded image
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -502,6 +508,8 @@ export const ScreenshotTool = () => {
       patternsWaves: patterns.waves,
       textToRender,
       fontSize,
+      textPositionX,
+      textPositionY,
     });
   }, [
     backgroundColour,
@@ -521,6 +529,8 @@ export const ScreenshotTool = () => {
     setSearchParams,
     textToRender,
     fontSize,
+    textPositionX,
+    textPositionY,
   ]);
 
   useEffect(() => {
@@ -842,6 +852,8 @@ export const ScreenshotTool = () => {
         patterns,
         textToRender,
         fontSize,
+        textPositionX,
+        textPositionY,
       });
       requestRef.current = requestAnimationFrame(redraw);
     };
@@ -870,6 +882,8 @@ export const ScreenshotTool = () => {
     flareColour,
     textToRender,
     fontSize,
+    textPositionX,
+    textPositionY,
   ]);
 
   // Add event listeners for mouse up and mouse leave
@@ -1139,6 +1153,32 @@ export const ScreenshotTool = () => {
       />
     </div>
   );
+  const textPositionXSlider = (
+    <div className="flex flex-row gap-2">
+      <label htmlFor="text-position-x">Text Position X</label>
+      <input
+        id="text-position-x"
+        type="range"
+        min={-canvasWidth / 2}
+        max={canvasWidth / 2}
+        value={textPositionX}
+        onChange={(event) => setTextPositionX(Number(event.target.value))}
+      />
+    </div>
+  );
+  const textPositionYSlider = (
+    <div className="flex flex-row gap-2">
+      <label htmlFor="text-position-y">Text Position Y</label>
+      <input
+        id="text-position-y"
+        type="range"
+        min={-canvasHeight / 2}
+        max={canvasHeight / 2}
+        value={textPositionY}
+        onChange={(event) => setTextPositionY(Number(event.target.value))}
+      />
+    </div>
+  );
   const fontSizeSlider = (
     <div className="flex flex-row gap-2">
       <label htmlFor="font-size-slider">Font Size</label>
@@ -1232,6 +1272,8 @@ export const ScreenshotTool = () => {
 
     // Text styling
     textToRenderInput,
+    textPositionXSlider,
+    textPositionYSlider,
     fontSizeSlider,
 
     hr,

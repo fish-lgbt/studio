@@ -312,20 +312,22 @@ const draw = ({
     ctx.shadowBlur = shadowBlur;
   }
 
-  // const stackCount = 10;
-  const STACK_SPACE = 10;
+  // What is this? I don't know, but it works
+  // Ask Liz for a better name later on
+  const stackSpace = 10;
 
   // Draw the stack of images
   for (let i = 0; i < stackCount; i++) {
-    const shearFactor = stackCount - i;
     // Calculate scale and position adjustments based on the current iteration
+    const shearFactor = stackCount - i;
     const scaleAdjustment = 0.9 + (0.1 * (i - shearFactor)) / stackCount;
     const positionAdjustmentX = (scaledImageWidth - scaledImageWidth * scaleAdjustment) / 2;
-    const positionAdjustmentY = STACK_SPACE * shearFactor;
+    const positionAdjustmentY = 10 * shearFactor;
 
+    // Draw the image to the main canvas
     ctx.drawImage(
       imageCanvas,
-      position.x + positionAdjustmentX, //  3 is a magic value i guess
+      position.x + positionAdjustmentX,
       position.y - positionAdjustmentY,
       scaledImageWidth * scaleAdjustment,
       scaledImageHeight * scaleAdjustment,
@@ -461,6 +463,72 @@ const centerImage = (
     x: (canvasRef.current.width - scaledImageWidth) / 2,
     y: (canvasRef.current.height - scaledImageHeight) / 2,
   };
+};
+
+const ChevronUpIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-6 w-6 stroke-current text-black dark:text-white"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
+const ChevronDownIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-6 w-6 stroke-current text-black dark:text-white"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 15l7-7 7 7" />
+  </svg>
+);
+
+type SidebarProps = {
+  groups: (false | (false | JSX.Element)[])[];
+  disabled: boolean;
+  name: string;
+};
+
+const Sidebar = ({ disabled, groups, name }: SidebarProps) => {
+  // const [showSidebar, setShowSidebar] = useState(false);
+  return (
+    <div className="relative h-fit self-center text-black dark:text-white text-sm w-full">
+      {!disabled && <div className="z-10 w-full h-full bg-black bg-opacity-80 absolute rounded cursor-not-allowed" />}
+      <div className="bg-white dark:bg-[#181818] border border-[#14141414] flex flex-col gap-2 h-fit w-full rounded">
+        <div className="flex flex-row w-full p-2 justify-between border-[#dadada] bg-[#0e0e0e]">
+          <span className="font-semibold">{name}</span>
+          {/* <Button
+            onClick={() => {
+              setShowSidebar(!showSidebar);
+            }}
+          >
+            {showSidebar ? <ChevronDownIcon /> : <ChevronUpIcon />}
+          </Button> */}
+        </div>
+        {groups.filter(Boolean).map((group, groupIndex) => {
+          if (!group) return null;
+          const items = group.filter(Boolean);
+
+          return (
+            <div key={`${name}-${groupIndex}`}>
+              {items.map((item, index) => (
+                <div key={`${name}-${groupIndex}-${index}`} className="p-2 overflow-y-scroll">
+                  {item}
+                </div>
+              ))}
+              {groupIndex < groups.filter(Boolean).length - 1 && <hr className="border-[0.5px] border-[#2a2a2a]" />}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 };
 
 export const ScreenshotTool = () => {
@@ -1021,11 +1089,7 @@ export const ScreenshotTool = () => {
       ref={canvasRef}
       width={canvasWidth}
       height={canvasHeight}
-      style={{
-        maxHeight: `${canvasHeight / 2}px`,
-        maxWidth: `${canvasWidth / 2}px`,
-      }}
-      className="border border-black dark:border-white"
+      className="border border-black dark:border-white max-w-full"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -1170,11 +1234,11 @@ export const ScreenshotTool = () => {
     },
     {
       name: 'Black',
-      colour: '#ffffff',
+      colour: '#000000',
     },
     {
       name: 'White',
-      colour: '#000000',
+      colour: '#FFFFFF',
     },
   ];
   const frameColourPicker = (
@@ -1250,6 +1314,7 @@ export const ScreenshotTool = () => {
       <label htmlFor="text-to-render-input">Text</label>
       <input
         id="text-to-render-input"
+        autoComplete="off"
         className="px-2 py-1 border bg-[#f1f1f3] dark:bg-[#222327] border-[#e4e4e7] dark:border-[#2e2e2e] rounded-sm text-[#2e2e2e] dark:text-[#f1f1f3]"
         type="text"
         value={textToRender ?? ''}
@@ -1329,9 +1394,26 @@ export const ScreenshotTool = () => {
     </div>
   );
 
-  const hr = <hr className="border-[0.5px] border-[#2a2a2a]" />;
+  // Image sidebar
+  const imageSidebar: (false | (false | JSX.Element)[])[] = [
+    // Shadow
+    [shadowColourPicker, shadowSizeSlider],
 
-  const sidebarGroups = [
+    // Corner radius
+    [cornerRadiusSlider],
+
+    // Frame colour
+    [frameColourPicker],
+
+    // Image position
+    [imageSizeSlider, centerImageButton],
+
+    // Stacks
+    [stacksSlider],
+  ];
+
+  // Canvas sidebar
+  const canvasSidebar: (false | (false | JSX.Element)[])[] = [
     // Background type
     [backgroundTypeButtons],
 
@@ -1342,17 +1424,8 @@ export const ScreenshotTool = () => {
       backgroundType === 'image' && backgroundImagePicker,
     ],
 
-    // Shadow
-    [shadowColourPicker, shadowSizeSlider],
-
-    // Corner radius
-    [cornerRadiusSlider],
-
     // Canvas ratio
     [canvasRatioSelector],
-
-    // Frame colour
-    [frameColourPicker],
 
     // Flare
     [flareColourPicker, flareIntensitySlider],
@@ -1362,41 +1435,13 @@ export const ScreenshotTool = () => {
 
     // Text styling
     [textToRenderInput, textPositionXSlider, textPositionYSlider, fontSizeSlider],
+  ];
 
-    // Image position
-    [imageSizeSlider, centerImageButton],
-
-    // Stacks
-    [stacksSlider],
-
+  // Meta sidebar
+  const metaSidebar: (false | (false | JSX.Element)[])[] = [
     // Download
     [downloadButton],
   ];
-
-  const sidebar = (
-    <div className="relative h-fit self-center text-black dark:text-white text-sm">
-      {!image && <div className="z-10 w-full h-full bg-black bg-opacity-80 absolute rounded cursor-not-allowed" />}
-      <div className="bg-white dark:bg-[#181818] border border-[#14141414] flex flex-col gap-2 h-fit rounded">
-        {sidebarGroups.filter(Boolean).map((group, groupIndex) => {
-          if (!group) return null;
-          const items = group.filter(Boolean);
-
-          return (
-            <>
-              {items.map((item, index) => (
-                <>
-                  <div key={index} className={cn('p-2 justify-between')}>
-                    {item}
-                  </div>
-                </>
-              ))}
-              {groupIndex < sidebarGroups.filter(Boolean).length - 1 && hr}
-            </>
-          );
-        })}
-      </div>
-    </div>
-  );
 
   const canShowDropzone = !image || showDropzone;
 
@@ -1410,12 +1455,17 @@ export const ScreenshotTool = () => {
         setShowDropzone(false);
       }}
     >
-      {/* Sidebar */}
-      {sidebar}
-      {/* Content */}
-      <div className="p-2 relative flex justify-center items-center">
-        {canShowDropzone && dropzone}
-        {mainCanvas}
+      <div className="flex flex-col gap-2 min-w-[360px] overflow-y-clip">
+        <Sidebar name="Image settings" disabled={!!image} groups={imageSidebar} />
+        <Sidebar name="Canvas settings" disabled={!!image} groups={canvasSidebar} />
+        <Sidebar name="Meta" disabled={!!image} groups={metaSidebar} />
+      </div>
+
+      <div>
+        <div className="p-2 relative flex justify-center items-center min-w-[500px]">
+          {canShowDropzone && dropzone}
+          {mainCanvas}
+        </div>
       </div>
     </div>
   );

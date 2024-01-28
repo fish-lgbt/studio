@@ -1244,8 +1244,8 @@ export const ScreenshotTool = () => {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2"
-        d="M5 14h14v2L5 21v-7zM5 10h14V8L5 3v7z"
-      ></path>
+        d="M10 19V5H8L3 19h7zM14 19V5h2l5 14h-7z"
+      />
     </svg>
   );
   const FlipVerticalIcon = () => (
@@ -1262,16 +1262,18 @@ export const ScreenshotTool = () => {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2"
-        d="M10 19V5H8L3 19h7zM14 19V5h2l5 14h-7z"
-      ></path>
+        d="M5 14h14v2L5 21v-7zM5 10h14V8L5 3v7z"
+      />
     </svg>
   );
+
   const flipImage = (
     image: HTMLImageElement,
     imageFlip: {
       horizontal: boolean;
       vertical: boolean;
     },
+    imageRotation: number,
   ) => {
     if (!image) return null;
 
@@ -1283,12 +1285,23 @@ export const ScreenshotTool = () => {
       const flippedImageCtx = flippedImageCanvas.getContext('2d');
       if (!flippedImageCtx) return null;
       if (imageFlip.horizontal) {
-        flippedImageCtx.translate(image.width, 0);
-        flippedImageCtx.scale(-1, 1);
+        if (imageRotation === 90 || imageRotation === 270) {
+          flippedImageCtx.translate(0, image.width);
+          flippedImageCtx.scale(1, -1);
+        } else {
+          flippedImageCtx.translate(image.width, 0);
+          flippedImageCtx.scale(-1, 1);
+        }
       }
       if (imageFlip.vertical) {
-        flippedImageCtx.translate(0, image.height);
-        flippedImageCtx.scale(1, -1);
+        // If the image is rotated, we need to flip the image along the opposite axis
+        if (imageRotation === 90 || imageRotation === 270) {
+          flippedImageCtx.translate(image.height, 0);
+          flippedImageCtx.scale(-1, 1);
+        } else {
+          flippedImageCtx.translate(0, image.height);
+          flippedImageCtx.scale(1, -1);
+        }
       }
       flippedImageCtx.drawImage(image, 0, 0);
       const newImage = new Image(flippedImageCanvas.width, flippedImageCanvas.height);
@@ -1305,10 +1318,14 @@ export const ScreenshotTool = () => {
         onClick={() => {
           setImage((image) => {
             if (!image) return null;
-            return flipImage(image, {
-              horizontal: true,
-              vertical: false,
-            });
+            return flipImage(
+              image,
+              {
+                horizontal: true,
+                vertical: false,
+              },
+              imageRotation,
+            );
           });
         }}
       >
@@ -1318,10 +1335,14 @@ export const ScreenshotTool = () => {
         onClick={() => {
           setImage((image) => {
             if (!image) return null;
-            return flipImage(image, {
-              horizontal: false,
-              vertical: true,
-            });
+            return flipImage(
+              image,
+              {
+                horizontal: false,
+                vertical: true,
+              },
+              imageRotation,
+            );
           });
         }}
       >

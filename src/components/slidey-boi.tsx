@@ -32,7 +32,7 @@ export const SlideyBoi = ({ type: _type, id, label, value, onChange, ...passthro
           }}
         >
           <input
-            className="font-mono text-[#a0a0a0] bg-[#f1f1f3] dark:bg-[#121212] border border-[#e4e4e7] dark:border-[#2e2e2e] rounded px-2 py-1 h-5 text-xs w-full"
+            className="font-mono text-[#a0a0a0] bg-[#f1f1f3] dark:bg-[#121212] border border-[#e4e4e7] dark:border-[#2e2e2e] rounded p-1 h-5 text-xs text-center w-full"
             value={value}
             onChange={(e) => {
               e.preventDefault();

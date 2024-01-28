@@ -12,6 +12,7 @@ import { useSearchParams } from '@/hooks/use-search-params';
 import { Button } from './button';
 import { SlideyBoi } from './slidey-boi';
 import { PickyPal } from './picky-pal';
+import { useLongPress } from '@/hooks/use-long-press';
 
 const RefreshIcon = () => (
   <svg
@@ -524,6 +525,64 @@ const centerImage = (
   };
 };
 
+const RotateIcon = ({ rotation, className }: { rotation: number; className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    className={cn('stroke-black dark:stroke-white py-1', className)}
+    style={{
+      rotate: `${rotation}deg`,
+    }}
+  >
+    <path
+      stroke="currentColour"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      fill="none"
+      d="M11.5 20.5a8.5 8.5 0 117.37-4.262M22.5 15l-3.63 1.238m-1.695-3.855l1.354 3.971.34-.116"
+    />
+  </svg>
+);
+const FlipHorizontalIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    fill="none"
+    viewBox="0 0 24 24"
+    className="stroke-black dark:stroke-white py-1"
+  >
+    <path
+      stroke="currentColour"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M10 19V5H8L3 19h7zM14 19V5h2l5 14h-7z"
+    />
+  </svg>
+);
+const FlipVerticalIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    fill="none"
+    viewBox="0 0 24 24"
+    className="stroke-black dark:stroke-white py-1"
+  >
+    <path
+      stroke="currentColour"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M5 14h14v2L5 21v-7zM5 10h14V8L5 3v7z"
+    />
+  </svg>
+);
+
 type SidebarProps = {
   groups: (false | (false | JSX.Element)[])[];
   disabled: boolean;
@@ -558,6 +617,51 @@ const Sidebar = ({ disabled, groups, name }: SidebarProps) => {
       </div>
     </div>
   );
+};
+
+const flipImage = (
+  image: HTMLImageElement,
+  imageFlip: {
+    horizontal: boolean;
+    vertical: boolean;
+  },
+  imageRotation: number,
+) => {
+  if (!image) return null;
+
+  // Flip the image if necessary
+  if (imageFlip.horizontal || imageFlip.vertical) {
+    const flippedImageCanvas = document.createElement('canvas');
+    flippedImageCanvas.width = image.width;
+    flippedImageCanvas.height = image.height;
+    const flippedImageCtx = flippedImageCanvas.getContext('2d');
+    if (!flippedImageCtx) return null;
+    if (imageFlip.horizontal) {
+      if (imageRotation === 90 || imageRotation === 270) {
+        flippedImageCtx.translate(0, image.width);
+        flippedImageCtx.scale(1, -1);
+      } else {
+        flippedImageCtx.translate(image.width, 0);
+        flippedImageCtx.scale(-1, 1);
+      }
+    }
+    if (imageFlip.vertical) {
+      // If the image is rotated, we need to flip the image along the opposite axis
+      if (imageRotation === 90 || imageRotation === 270) {
+        flippedImageCtx.translate(image.height, 0);
+        flippedImageCtx.scale(-1, 1);
+      } else {
+        flippedImageCtx.translate(0, image.height);
+        flippedImageCtx.scale(1, -1);
+      }
+    }
+    flippedImageCtx.drawImage(image, 0, 0);
+    const newImage = new Image(flippedImageCanvas.width, flippedImageCanvas.height);
+    newImage.src = flippedImageCanvas.toDataURL();
+    return newImage;
+  }
+
+  return image;
 };
 
 export const ScreenshotTool = () => {
@@ -1144,7 +1248,6 @@ export const ScreenshotTool = () => {
   );
   const randomBackgroundButton = (
     <Button
-      className="py-2"
       disabled={backgroundType === 'transparent'}
       onClick={() => {
         // Generate a random background colour
@@ -1224,105 +1327,6 @@ export const ScreenshotTool = () => {
       </div>
     </div>
   );
-  const RotateIcon = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      className="stroke-black dark:stroke-white py-1"
-    >
-      <path
-        stroke="currentColour"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        fill="none"
-        d="M11.5 20.5a8.5 8.5 0 117.37-4.262M22.5 15l-3.63 1.238m-1.695-3.855l1.354 3.971.34-.116"
-      />
-    </svg>
-  );
-  const FlipHorizontalIcon = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      fill="none"
-      viewBox="0 0 24 24"
-      className="stroke-black dark:stroke-white py-1"
-    >
-      <path
-        stroke="currentColour"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M10 19V5H8L3 19h7zM14 19V5h2l5 14h-7z"
-      />
-    </svg>
-  );
-  const FlipVerticalIcon = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      fill="none"
-      viewBox="0 0 24 24"
-      className="stroke-black dark:stroke-white py-1"
-    >
-      <path
-        stroke="currentColour"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M5 14h14v2L5 21v-7zM5 10h14V8L5 3v7z"
-      />
-    </svg>
-  );
-
-  const flipImage = (
-    image: HTMLImageElement,
-    imageFlip: {
-      horizontal: boolean;
-      vertical: boolean;
-    },
-    imageRotation: number,
-  ) => {
-    if (!image) return null;
-
-    // Flip the image if necessary
-    if (imageFlip.horizontal || imageFlip.vertical) {
-      const flippedImageCanvas = document.createElement('canvas');
-      flippedImageCanvas.width = image.width;
-      flippedImageCanvas.height = image.height;
-      const flippedImageCtx = flippedImageCanvas.getContext('2d');
-      if (!flippedImageCtx) return null;
-      if (imageFlip.horizontal) {
-        if (imageRotation === 90 || imageRotation === 270) {
-          flippedImageCtx.translate(0, image.width);
-          flippedImageCtx.scale(1, -1);
-        } else {
-          flippedImageCtx.translate(image.width, 0);
-          flippedImageCtx.scale(-1, 1);
-        }
-      }
-      if (imageFlip.vertical) {
-        // If the image is rotated, we need to flip the image along the opposite axis
-        if (imageRotation === 90 || imageRotation === 270) {
-          flippedImageCtx.translate(image.height, 0);
-          flippedImageCtx.scale(-1, 1);
-        } else {
-          flippedImageCtx.translate(0, image.height);
-          flippedImageCtx.scale(1, -1);
-        }
-      }
-      flippedImageCtx.drawImage(image, 0, 0);
-      const newImage = new Image(flippedImageCanvas.width, flippedImageCanvas.height);
-      newImage.src = flippedImageCanvas.toDataURL();
-      return newImage;
-    }
-
-    return image;
-  };
 
   const imageRotationButtons = (
     <div className="flex flex-row gap-2">
@@ -1361,17 +1365,36 @@ export const ScreenshotTool = () => {
         <FlipVerticalIcon />
       </Button>
       <Button
-        onClick={() => {
+        longPressDuration={100}
+        onLongPress={() => {
           setImageRotation((imageRotation) => {
-            if (imageRotation >= 360) {
-              return 0;
-            }
-
+            return imageRotation + 10;
+          });
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+          setImageRotation((imageRotation) => {
             return imageRotation + 10;
           });
         }}
       >
-        <RotateIcon />
+        <RotateIcon rotation={imageRotation} />
+      </Button>
+      <Button
+        longPressDuration={100}
+        onLongPress={() => {
+          setImageRotation((imageRotation) => {
+            return imageRotation - 10;
+          });
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+          setImageRotation((imageRotation) => {
+            return imageRotation - 10;
+          });
+        }}
+      >
+        <RotateIcon rotation={imageRotation} className="scale-x-[-1]" />
       </Button>
     </div>
   );

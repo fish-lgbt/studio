@@ -868,15 +868,21 @@ export const ScreenshotTool = () => {
   const handleChangeBackground = (color: string) => {
     setBackgroundColour(color);
   };
-
   const getPrimaryColorsFromCanvas = (canvas: HTMLCanvasElement) => {
-    const context = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
+    // Create a temporary canvas to downsample the image
+    const tempCanvas = document.createElement('canvas');
+    const tempContext = tempCanvas.getContext('2d');
+    tempCanvas.width = 100;
+    tempCanvas.height = 100;
 
-    if (!context) return [[0, 0, 0]];
+    // Check if context is available
+    if (!tempContext) return [[0, 0, 0]];
 
-    const imageData = context.getImageData(0, 0, width, height);
+    // Draw the original canvas onto the temporary canvas, resizing it to 100x100
+    tempContext.drawImage(canvas, 0, 0, 100, 100);
+
+    // Use the downsized image for color extraction
+    const imageData = tempContext.getImageData(0, 0, 100, 100);
     const data = imageData.data;
 
     const colorMap: {
@@ -884,7 +890,7 @@ export const ScreenshotTool = () => {
     } = {};
 
     // Iterate over every pixel to count the occurrence of each color
-    for (let i = 0; i < data.length; i += 4 * 1000) {
+    for (let i = 0; i < data.length; i += 4 * 4) {
       // Convert the RGB to a string to use as a key (ignoring alpha channel)
       const color = `${data[i]}-${data[i + 1]}-${data[i + 2]}`;
 
@@ -920,15 +926,12 @@ export const ScreenshotTool = () => {
 
         context.drawImage(loadedImage, 0, 0);
         const colours = getPrimaryColorsFromCanvas(imageCanvas);
-        const colour = colours[0];
-        setBackgroundColour(rgbaToHex(`rgb(${colour[0]}, ${colour[1]}, ${colour[2]})`));
+        const gradientColours = colours.map((colour) => rgbaToHex(`rgb(${colour[0]}, ${colour[1]}, ${colour[2]})`));
 
-        const gradientColours = colours
-          .slice(colours.length / 2)
-          .map((colour) => rgbaToHex(`rgb(${colour[0]}, ${colour[1]}, ${colour[2]})`));
+        setBackgroundColour(gradientColours[0]);
         setbackgroundGradient([
           gradientColours[0],
-          gradientColours[Math.floor(gradientColours.length * 0.8)],
+          gradientColours[Math.floor(gradientColours.length * 0.5)],
           gradientColours[gradientColours.length - 1],
         ]);
       });

@@ -1,16 +1,21 @@
 'use client';
 import { Button } from './button';
-import { DownloadCanvasButtonProps } from './screenshot-tool';
+
+type DownloadCanvasButtonProps = {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  type?: 'png' | 'jpeg' | 'webp';
+  className?: string;
+};
 
 /**
- * User can download the canvas as a PNG file
+ * User can download the canvas as a file
  */
-export const DownloadCanvasButton = ({ canvasRef }: DownloadCanvasButtonProps) => {
+export const DownloadCanvasButton = ({ canvasRef, type = 'png', className }: DownloadCanvasButtonProps) => {
   const handleDownload = () => {
     if (canvasRef.current) {
-      const image = canvasRef.current.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+      const image = canvasRef.current.toDataURL(`image/${type}`).replace(`image/${type}`, 'image/octet-stream');
       const link = document.createElement('a');
-      link.download = 'canvas-image.png';
+      link.download = `canvas-image.${type}`;
       link.href = image;
       document.body.appendChild(link);
       link.click();
@@ -18,5 +23,9 @@ export const DownloadCanvasButton = ({ canvasRef }: DownloadCanvasButtonProps) =
     }
   };
 
-  return <Button onClick={handleDownload}>Download PNG</Button>;
+  return (
+    <Button onClick={handleDownload} className={className}>
+      Download {type}
+    </Button>
+  );
 };

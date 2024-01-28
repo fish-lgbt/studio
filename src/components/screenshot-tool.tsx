@@ -1572,11 +1572,7 @@ export const ScreenshotTool = () => {
     />
   );
   const downloadButton = <DownloadCanvasButton canvasRef={canvasRef} />;
-  const dropzone = (
-    <div className="absolute">
-      <Dropzone onDrop={onDrop} />
-    </div>
-  );
+  const dropzone = <Dropzone onDrop={onDrop} />;
 
   // Image sidebar
   const imageSidebar: (false | (false | JSX.Element)[])[] = [

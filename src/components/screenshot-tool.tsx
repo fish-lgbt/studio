@@ -28,7 +28,7 @@ const RefreshIcon = () => (
       strokeLinejoin="round"
       strokeWidth="2"
       d="M18.61 5.89L15.5 9h6V3l-2.89 2.89zm0 0A9.001 9.001 0 003.055 11m2.335 7.11L2.5 21v-6h6l-3.11 3.11zm0 0A9.001 9.001 0 0020.945 13"
-    ></path>
+    />
   </svg>
 );
 
@@ -1226,8 +1226,9 @@ export const ScreenshotTool = () => {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2"
+        fill="none"
         d="M11.5 20.5a8.5 8.5 0 117.37-4.262M22.5 15l-3.63 1.238m-1.695-3.855l1.354 3.971.34-.116"
-      ></path>
+      />
     </svg>
   );
   const FlipHorizontalIcon = () => (

@@ -18,6 +18,9 @@ export const Button = ({ active, className, onLongPress, longPressDuration = 500
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (!onLongPress) {
+      return;
+    }
     return () => {
       if (interval.current) {
         clearInterval(interval.current);
@@ -42,12 +45,19 @@ export const Button = ({ active, className, onLongPress, longPressDuration = 500
         className,
       )}
       onMouseDown={(e) => {
+        if (!onLongPress) {
+          return;
+        }
         e.preventDefault();
         interval.current = setInterval(() => {
           onLongPress?.();
         }, longPressDuration);
       }}
       onMouseUp={(e) => {
+        if (!onLongPress) {
+          return;
+        }
+
         e.preventDefault();
         if (interval.current) {
           clearInterval(interval.current);
@@ -56,20 +66,24 @@ export const Button = ({ active, className, onLongPress, longPressDuration = 500
           clearTimeout(timeout.current);
         }
         interval.current = null;
+        timeout.current = null;
       }}
       onClick={(e) => {
-        e.preventDefault();
-        if (longPressDuration) {
-          // Wait the duration if it wasnt triggered then it was a click
-          timeout.current = setTimeout(() => {
-            if (!interval.current) {
-              return;
-            }
-
-            onClick?.(e);
-          }, longPressDuration);
+        if (!onLongPress) {
+          onClick?.(e);
           return;
         }
+
+        e.preventDefault();
+
+        // Wait the duration if it wasnt triggered then it was a click
+        timeout.current = setTimeout(() => {
+          if (!interval.current) {
+            return;
+          }
+
+          onClick?.(e);
+        }, longPressDuration);
       }}
       {...props}
     />

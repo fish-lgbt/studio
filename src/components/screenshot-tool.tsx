@@ -12,7 +12,7 @@ import { useSearchParams } from '@/hooks/use-search-params';
 import { Button } from './button';
 import { SlideyBoi } from './slidey-boi';
 import { PickyPal } from './picky-pal';
-import { useLongPress } from '@/hooks/use-long-press';
+import gifFrames, { FrameData } from 'gif-frames/dist/gif-frames';
 
 const RefreshIcon = () => (
   <svg
@@ -1036,12 +1036,42 @@ export const ScreenshotTool = () => {
     return coloursByFrequency.map((colour) => colour.split('-').map((num) => parseInt(num, 10)));
   };
 
+  // Timeout ref for gif frames
+  const gifFrameTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // @TODO: make this not shit 'cause its really bad code
+  const handleFrameData = (frameData: FrameData[]) => {
+    let frameIndex = 0;
+    // @TODO: make this not shit 'cause its really bad code
+    const updateNextGifFrame = () => {
+      if (frameIndex >= frameData.length) {
+        frameIndex = 0;
+      }
+      const frame = frameData[frameIndex++].getImage();
+      setImage(frame);
+
+      gifFrameTimeoutRef.current = setTimeout(() => {
+        updateNextGifFrame();
+      }, frameData[frameIndex++].frameInfo.delay * 10);
+    };
+
+    updateNextGifFrame();
+  };
+
   const onDrop = useCallback(
     (file: File[]) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
       loadImage(URL.createObjectURL(file[0])).then((loadedImage) => {
+        if (file[0].type === 'image/gif') {
+          gifFrames({ url: loadedImage.src, frames: 'all', outputType: 'canvas', cumulative: true }).then(handleFrameData);
+        } else {
+          if (gifFrameTimeoutRef.current) {
+            clearTimeout(gifFrameTimeoutRef.current);
+          }
+        }
+
         setImage(loadedImage);
         centerImage(canvasRef, loadedImage, scale, position);
 

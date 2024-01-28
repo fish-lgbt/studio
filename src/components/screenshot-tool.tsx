@@ -687,6 +687,7 @@ export const ScreenshotTool = () => {
     fontSize: number;
     textPositionX: number;
     textPositionY: number;
+    prime: boolean;
   }>();
 
   // Backgrounds
@@ -749,6 +750,19 @@ export const ScreenshotTool = () => {
   const [showDropzone, setShowDropzone] = useState(false);
   const images = useRef<HTMLImageElement[]>([]);
 
+  // Easter eggs
+  const prime = searchParams.prime === 'agen';
+
+  useEffect(() => {
+    if (!image && prime) {
+      const image = new Image();
+      image.src = '/easter-eggs/prime.jpg';
+      image.onload = () => {
+        setImage(image);
+      };
+    }
+  });
+
   // When config changes, update the URL
   useEffect(() => {
     setSearchParams({
@@ -772,6 +786,7 @@ export const ScreenshotTool = () => {
       fontSize,
       textPositionX,
       textPositionY,
+      prime,
     });
   }, [
     backgroundColour,
@@ -795,6 +810,7 @@ export const ScreenshotTool = () => {
     textPositionY,
     imageFlip,
     imageRotation,
+    prime,
   ]);
 
   useEffect(() => {

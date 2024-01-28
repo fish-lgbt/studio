@@ -29,7 +29,7 @@ export const Button = ({ active, className, onLongPress, longPressDuration = 500
         clearTimeout(timeout.current);
       }
     };
-  }, []);
+  }, [onLongPress]);
 
   return (
     <button

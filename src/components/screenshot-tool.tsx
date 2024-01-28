@@ -1651,7 +1651,13 @@ export const ScreenshotTool = () => {
       onChange={(event) => setStackCount(Number(event.target.value))}
     />
   );
-  const downloadButton = <DownloadCanvasButton canvasRef={canvasRef} />;
+  const downloadButton = (
+    <div className="flex flex-row gap-2">
+      <DownloadCanvasButton canvasRef={canvasRef} type="png" className="p-2" />
+      <DownloadCanvasButton canvasRef={canvasRef} type="jpeg" className="p-2" />
+      <DownloadCanvasButton canvasRef={canvasRef} type="webp" className="p-2" />
+    </div>
+  );
   const dropzone = <Dropzone onDrop={onDrop} />;
 
   // Image sidebar

@@ -198,6 +198,7 @@ type DrawParams = {
     vertical: boolean;
   };
   imageRotation: number;
+  autoCenter: boolean;
 };
 
 const draw = ({
@@ -223,6 +224,7 @@ const draw = ({
   stackCount,
   imageFlip,
   imageRotation,
+  autoCenter,
 }: DrawParams) => {
   const ctx = canvas?.getContext('2d');
 
@@ -288,13 +290,18 @@ const draw = ({
     scaledImageHeight = image.height * scaleFactorToFitCanvas;
   }
 
-  // Snap the image to a grid of 25px
-  position.x = Math.round(position.x / 25) * 25;
-  position.y = Math.round(position.y / 25) * 25;
+  // Don't snap the image to the grid if we're auto centering
+  if (!autoCenter) {
+    // Snap the image to a grid of 20px
+    position.x = Math.round(position.x / 10) * 10;
+    position.y = Math.round(position.y / 10) * 10;
 
-  // Clamp the image position to the canvas
-  position.x = Math.min(Math.max(position.x, 0), canvas.width - scaledImageWidth);
-  position.y = Math.min(Math.max(position.y, 0), canvas.height - scaledImageHeight);
+    // Clamp the image position to the canvas
+    position.x =
+      Math.min(Math.max(position.x, 0), canvas.width - scaledImageWidth) + (imageFlip.horizontal ? scaledImageWidth : 0);
+    position.y =
+      Math.min(Math.max(position.y, 0), canvas.height - scaledImageHeight) + (imageFlip.vertical ? scaledImageHeight : 0);
+  }
 
   // Process the image
   const imageCanvas = new RenderPipeline(image, [
@@ -1067,6 +1074,7 @@ export const ScreenshotTool = () => {
         stackCount,
         imageFlip,
         imageRotation,
+        autoCenter,
       });
       requestRef.current = requestAnimationFrame(redraw);
     };

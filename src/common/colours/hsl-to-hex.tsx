@@ -1,5 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
-'use client';
 import { hslToRgb } from './hsl-to-rgb';
 
 export const hslToHex = (value: string) => {

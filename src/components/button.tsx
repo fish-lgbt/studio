@@ -1,5 +1,4 @@
 import { cn } from '@/cn';
-import { useLongPress } from '@/hooks/use-long-press';
 import { useEffect, useRef } from 'react';
 
 type ButtonProps = JSX.IntrinsicElements['button'] & {

@@ -1,6 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
-'use client';
-
 export const hslToRgb = (h: number, s: number, l: number) => {
   let r: number, g: number, b: number;
 

@@ -1,6 +1,4 @@
-'use client';
-
-import { hslToHex } from './hsl-to-hex';
+import { hslToHex } from '../common/colours/hsl-to-hex';
 
 type BackgroundColourPickerProps = {
   backgroundColour: string | null;

@@ -1,6 +1,8 @@
-'use client';
 import { useDropzone } from 'react-dropzone';
-import { DropzoneProps } from './screenshot-tool';
+
+type DropzoneProps = {
+  onDrop: (acceptedFiles: File[]) => void;
+};
 
 /**
  * User can drag and drop an image to the canvas

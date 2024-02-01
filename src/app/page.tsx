@@ -1,12 +1,10 @@
-import { Suspense } from 'react';
+'use client';
 import { ScreenshotTool } from '../components/screenshot-tool';
 
-export default function Home() {
+export default function Page() {
   return (
     <main className="flex flex-col gap-2">
-      <Suspense>
-        <ScreenshotTool />
-      </Suspense>
+      <ScreenshotTool />
     </main>
   );
 }

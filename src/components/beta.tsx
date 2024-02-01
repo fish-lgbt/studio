@@ -41,11 +41,15 @@ type Position = {
 const cachedImages = new Map<string, HTMLImageElement>();
 
 const draw = (
-  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement | null,
   scale: number,
   translatePos: Position,
   currentItemIndexRef: React.MutableRefObject<number | null>,
 ) => {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // Clear the canvas
 
   ctx.save(); // Save the current context state
@@ -129,15 +133,13 @@ export const ShowcaseStudio = () => {
   useResizeWindow(canvasRef, setScale);
 
   // Select the item that is being clicked
-  const currentItemIndexRef = useSelectItem(canvasRef, items, translatePos, scale);
+  const currentItemIndexRef = useSelectItem(canvasRef, items, translatePos.current, scale);
 
   // Move the item that is being dragged
-  useMoveItem(canvasRef, items, translatePos, scale);
+  useMoveItem(canvasRef, items, translatePos.current, scale);
 
   // Draw the canvas
-  useDrawCanvas(canvasRef, scale, translatePos, () =>
-    draw(canvasRef.current!.getContext('2d')!, scale, translatePos, currentItemIndexRef),
-  );
+  useDrawCanvas(canvasRef, () => draw(canvasRef.current, scale, translatePos.current, currentItemIndexRef));
 
   // Don't render canvas on the server
   if (typeof window === 'undefined') return null;

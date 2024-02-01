@@ -30,3 +30,11 @@ declare module 'gif-frames/dist/gif-frames' {
 
   export default function gifFrames(options: Options): Promise<FrameData[]>;
 }
+
+declare module 'react-fps-stats' {
+  import { Component } from 'react';
+
+  export default class FPSStats extends Component {
+    constructor(props: any);
+  }
+}

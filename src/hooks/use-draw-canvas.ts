@@ -9,7 +9,7 @@ export const useDrawCanvas = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   scale: number,
   translatePos: Position,
-  draw: (ctx: CanvasRenderingContext2D, scale: number, translatePos: Position) => void,
+  draw: () => void,
 ) => {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -20,7 +20,7 @@ export const useDrawCanvas = (
 
     // Start the animation loop
     const animate = () => {
-      draw(ctx, scale, translatePos);
+      draw();
       requestAnimationFrame(animate);
     };
 

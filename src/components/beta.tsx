@@ -4,12 +4,24 @@ import { useCanvasPanning } from '@/hooks/use-canvas-panning';
 import { useDrawCanvas } from '@/hooks/use-draw-canvas';
 import { useMoveItem } from '@/hooks/use-move-item';
 import { useResizeWindow } from '@/hooks/use-resize-window';
+import { useSelectItem } from '@/hooks/use-select-item';
 import { useRef, useState } from 'react';
 import FPSStats from 'react-fps-stats';
 
 const randomNumberBetween = (min: number, max: number) => Math.random() * (max - min) + min;
 
-const items = Array.from({ length: 1_000 }, (_, index) => ({
+type Item = {
+  id: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  colour: string;
+  image: string;
+  zIndex: number;
+};
+
+const items = Array.from<number, Item>({ length: 1_000 }, (_, index) => ({
   id: index,
   x: 100 * index,
   y: 100 * index,
@@ -28,7 +40,12 @@ type Position = {
 
 const cachedImages = new Map<string, HTMLImageElement>();
 
-const draw = (ctx: CanvasRenderingContext2D, scale: number, translatePos: Position) => {
+const draw = (
+  ctx: CanvasRenderingContext2D,
+  scale: number,
+  translatePos: Position,
+  currentItemIndexRef: React.MutableRefObject<number | null>,
+) => {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // Clear the canvas
 
   ctx.save(); // Save the current context state
@@ -64,6 +81,40 @@ const draw = (ctx: CanvasRenderingContext2D, scale: number, translatePos: Positi
     ctx.fillStyle = 'black';
     ctx.font = '20px Arial';
     ctx.fillText(item.id.toString(), item.x + 10, item.y + 30);
+
+    // If the item is selected draw a border around it with handles for resize and rotation
+    if (currentItemIndexRef.current === item.id) {
+      // Background
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(item.x, item.y, item.width, item.height);
+
+      // Draw the border
+      ctx.strokeStyle = 'pink';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(item.x, item.y, item.width, item.height);
+
+      // Handles
+      ctx.fillStyle = 'white';
+      ctx.strokeStyle = 'pink';
+      ctx.lineWidth = 1;
+
+      // Top left
+      ctx.fillRect(item.x - 5, item.y - 5, 10, 10);
+      ctx.strokeRect(item.x - 5, item.y - 5, 10, 10);
+
+      // Top right
+      ctx.fillRect(item.x + item.width - 5, item.y - 5, 10, 10);
+      ctx.strokeRect(item.x + item.width - 5, item.y - 5, 10, 10);
+
+      // Bottom left
+      ctx.fillRect(item.x - 5, item.y + item.height - 5, 10, 10);
+      ctx.strokeRect(item.x - 5, item.y + item.height - 5, 10, 10);
+
+      // Bottom right
+      ctx.fillRect(item.x + item.width - 5, item.y + item.height - 5, 10, 10);
+      ctx.strokeRect(item.x + item.width - 5, item.y + item.height - 5, 10, 10);
+    }
   }
 
   ctx.restore(); // Restore the context state to what it was before scaling and translating
@@ -77,11 +128,16 @@ export const ShowcaseStudio = () => {
   // Resize the canvas when the window resizes
   useResizeWindow(canvasRef, setScale);
 
+  // Select the item that is being clicked
+  const currentItemIndexRef = useSelectItem(canvasRef, items, translatePos, scale);
+
   // Move the item that is being dragged
   useMoveItem(canvasRef, items, translatePos, scale);
 
   // Draw the canvas
-  useDrawCanvas(canvasRef, scale, translatePos, draw);
+  useDrawCanvas(canvasRef, scale, translatePos, () =>
+    draw(canvasRef.current!.getContext('2d')!, scale, translatePos, currentItemIndexRef),
+  );
 
   // Don't render canvas on the server
   if (typeof window === 'undefined') return null;

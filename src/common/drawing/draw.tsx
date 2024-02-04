@@ -260,6 +260,7 @@ export const draw = ({
     textCtx.font = `${fontSize}px ${fontFamily}`;
     textCtx.textAlign = 'center';
     textCtx.textBaseline = 'middle';
+
     textCtx.fillStyle = '#FFFFFF';
     textCtx.fillText(textToRender, textCanvas.width / 2, textCanvas.height / 2);
 

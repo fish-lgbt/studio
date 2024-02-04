@@ -25,6 +25,7 @@ export default function RootLayout({
         <meta property="og:image:width" content="3020" />
         <meta property="og:image:height" content="1714" />
         <link rel="manifest" href="/manifest.json" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>
       <body className={inter.className}>{children}</body>
     </html>

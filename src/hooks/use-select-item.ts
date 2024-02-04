@@ -1,11 +1,5 @@
+import { Item } from '@/components/item';
 import { useEffect, useRef } from 'react';
-
-type Item = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
 
 type Position = {
   x: number;
@@ -40,55 +34,56 @@ export const useSelectItem = (
   translatePos: Position,
   scale: number,
 ) => {
-  const currentItem = useRef<number | null>(null);
-  const mouseRef = useRef({ x: 0, y: 0 });
+  return;
+  // const currentItem = useRef<number | null>(null);
+  // const mouseRef = useRef({ x: 0, y: 0 });
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  // useEffect(() => {
+  //   const canvas = canvasRef.current;
+  //   if (!canvas) return;
 
-    const onMouseDown = (event: MouseEvent) => {
-      const rect = (event.currentTarget as HTMLCanvasElement).getBoundingClientRect();
-      const { x: mouseX, y: mouseY } = getCoordinates(event, rect, translatePos, scale);
+  //   const onMouseDown = (event: MouseEvent) => {
+  //     const rect = (event.currentTarget as HTMLCanvasElement).getBoundingClientRect();
+  //     const { x: mouseX, y: mouseY } = getCoordinates(event, rect, translatePos, scale);
 
-      // Check if an item is being clicked
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        if (mouseX > item.x && mouseX < item.x + item.width && mouseY > item.y && mouseY < item.y + item.height) {
-          currentItem.current = i;
-          mouseRef.current.x = mouseX - item.x;
-          mouseRef.current.y = mouseY - item.y;
-          return;
-        }
-      }
-    };
+  //     // Check if an item is being clicked
+  //     for (let i = items.length - 1; i >= 0; i--) {
+  //       const item = items[i];
+  //       if (mouseX > item.x && mouseX < item.x + item.width && mouseY > item.y && mouseY < item.y + item.height) {
+  //         currentItem.current = i;
+  //         mouseRef.current.x = mouseX - item.x;
+  //         mouseRef.current.y = mouseY - item.y;
+  //         return;
+  //       }
+  //     }
+  //   };
 
-    const onTouchStart = (event: TouchEvent) => {
-      const rect = (event.currentTarget as HTMLCanvasElement).getBoundingClientRect();
-      const { x: touchX, y: touchY } = getCoordinates(event, rect, translatePos, scale);
+  //   const onTouchStart = (event: TouchEvent) => {
+  //     const rect = (event.currentTarget as HTMLCanvasElement).getBoundingClientRect();
+  //     const { x: touchX, y: touchY } = getCoordinates(event, rect, translatePos, scale);
 
-      // Logic similar to onMouseDown using touchX and touchY
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        if (touchX > item.x && touchX < item.x + item.width && touchY > item.y && touchY < item.y + item.height) {
-          currentItem.current = i;
-          mouseRef.current.x = touchX - item.x;
-          mouseRef.current.y = touchY - item.y;
-          return;
-        }
-      }
-    };
+  //     // Logic similar to onMouseDown using touchX and touchY
+  //     for (let i = items.length - 1; i >= 0; i--) {
+  //       const item = items[i];
+  //       if (touchX > item.x && touchX < item.x + item.width && touchY > item.y && touchY < item.y + item.height) {
+  //         currentItem.current = i;
+  //         mouseRef.current.x = touchX - item.x;
+  //         mouseRef.current.y = touchY - item.y;
+  //         return;
+  //       }
+  //     }
+  //   };
 
-    // Binding the event handlers
-    canvas.addEventListener('mousedown', onMouseDown);
-    canvas.addEventListener('touchstart', onTouchStart);
+  //   // Binding the event handlers
+  //   canvas.addEventListener('mousedown', onMouseDown);
+  //   canvas.addEventListener('touchstart', onTouchStart);
 
-    // Cleanup function to unbind the event handlers
-    return () => {
-      canvas.removeEventListener('mousedown', onMouseDown);
-      canvas.removeEventListener('touchstart', onTouchStart);
-    };
-  }, [canvasRef, items, translatePos, scale]);
+  //   // Cleanup function to unbind the event handlers
+  //   return () => {
+  //     canvas.removeEventListener('mousedown', onMouseDown);
+  //     canvas.removeEventListener('touchstart', onTouchStart);
+  //   };
+  // }, [canvasRef, items, translatePos, scale]);
 
-  return currentItem;
+  // return currentItem;
 };

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export const useResizeWindow = (canvasRef: React.RefObject<HTMLCanvasElement>, setScale: (scale: number) => void) => {
+export const useResizeWindow = (canvasRef: React.RefObject<HTMLCanvasElement>, scaleRef: React.MutableRefObject<number>) => {
   useEffect(() => {
     const handleResize = () => {
       if (!canvasRef.current) return;
@@ -10,7 +10,7 @@ export const useResizeWindow = (canvasRef: React.RefObject<HTMLCanvasElement>, s
       canvasRef.current.height = window.innerHeight;
 
       // Reset the zoom level
-      setScale(1);
+      scaleRef.current = 1;
     };
 
     window.addEventListener('resize', handleResize);
@@ -18,5 +18,5 @@ export const useResizeWindow = (canvasRef: React.RefObject<HTMLCanvasElement>, s
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [canvasRef, setScale]);
+  }, [canvasRef, scaleRef]);
 };

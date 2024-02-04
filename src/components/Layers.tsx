@@ -71,19 +71,22 @@ export const Layers = ({
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={layers.map((layer) => layer.id.toString())} strategy={verticalListSortingStrategy}>
           <div className="flex flex-col gap-1">
-            {layers.toReversed().map((layer, index) => {
-              return (
-                <SortableLayer
-                  key={layer.id}
-                  id={layer.id.toString()}
-                  layer={layer}
-                  selectedLayer={selectedLayer}
-                  onLayerSelect={onLayerSelect}
-                  onLayerUpdate={onLayerUpdate}
-                  onLayerDelete={onLayerDelete}
-                />
-              );
-            })}
+            {layers
+              .slice()
+              .reverse()
+              .map((layer, index) => {
+                return (
+                  <SortableLayer
+                    key={layer.id}
+                    id={layer.id.toString()}
+                    layer={layer}
+                    selectedLayer={selectedLayer}
+                    onLayerSelect={onLayerSelect}
+                    onLayerUpdate={onLayerUpdate}
+                    onLayerDelete={onLayerDelete}
+                  />
+                );
+              })}
           </div>
         </SortableContext>
       </DndContext>

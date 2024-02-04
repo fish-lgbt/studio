@@ -14,11 +14,14 @@ import { cn } from '@/cn';
 import { Point } from '@/common/point';
 import { CommandMenu } from './command-menu';
 import { TrashCanIcon } from './TrashCanIcon';
+import { Border } from './effects/border';
+import { Glow } from './effects/glow';
 
 export type Layer = {
   id: number;
   name: string;
   visible: boolean;
+  locked: boolean;
   items: Item[];
 };
 
@@ -94,55 +97,47 @@ const render = (
   ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  const viewport = {
-    x: -translatePos.x / scale,
-    y: -translatePos.y / scale,
-    width: window.innerWidth / scale,
-    height: window.innerHeight / scale,
-  };
+  // Render the safezone
+  if (showSafezone) {
+    const safezone = {
+      x: 0,
+      y: 0,
+      width: 1920 * scale,
+      height: 1080 * scale,
+    };
 
-  const safezone = {
-    x: 0,
-    y: 0,
-    width: 1920 * scale,
-    height: 1080 * scale,
-  };
+    // Save the current state of the context
+    ctx.save();
 
-  // Save the current state of the context
-  ctx.save();
+    // Translate the canvas to the current position
+    ctx.translate(translatePos.x, translatePos.y);
 
-  // Translate the canvas to the current position
-  ctx.translate(translatePos.x, translatePos.y);
+    // Scale the canvas
+    ctx.scale(scale, scale);
 
-  // Scale the canvas
-  ctx.scale(scale, scale);
+    // If the safezone size has changed we should re-render the safezone canvas
+    if (
+      lastknownSafezone.x !== safezone.x ||
+      lastknownSafezone.y !== safezone.y ||
+      lastknownSafezone.width !== safezone.width ||
+      lastknownSafezone.height !== safezone.height ||
+      showDebug
+    ) {
+      // Update the last known safezone
+      lastknownSafezone.x = safezone.x;
+      lastknownSafezone.y = safezone.y;
+      lastknownSafezone.width = safezone.width;
+      lastknownSafezone.height = safezone.height;
 
-  // If the safezone size has changed we should re-render the safezone canvas
-  if (
-    lastknownSafezone.x !== safezone.x ||
-    lastknownSafezone.y !== safezone.y ||
-    lastknownSafezone.width !== safezone.width ||
-    lastknownSafezone.height !== safezone.height
-  ) {
-    console.log('Rendering safezone canvas');
+      // Create a safezone canvas
+      const safezoneCanvas = document.createElement('canvas');
+      safezoneCanvas.width = safezone.width;
+      safezoneCanvas.height = safezone.height;
 
-    // Update the last known safezone
-    lastknownSafezone.x = safezone.x;
-    lastknownSafezone.y = safezone.y;
-    lastknownSafezone.width = safezone.width;
-    lastknownSafezone.height = safezone.height;
+      // Get the context of the safezone canvas
+      const safezoneCtx = safezoneCanvas.getContext('2d');
+      if (!safezoneCtx) return;
 
-    // Create a safezone canvas
-    const safezoneCanvas = document.createElement('canvas');
-    safezoneCanvas.width = safezone.width;
-    safezoneCanvas.height = safezone.height;
-
-    // Get the context of the safezone canvas
-    const safezoneCtx = safezoneCanvas.getContext('2d');
-    if (!safezoneCtx) return;
-
-    // Draw the safezone
-    if (showSafezone) {
       // Fill safezone with a "transparent" checkerboard
       const size = 20;
       for (let x = 0; x < safezone.width; x += size) {
@@ -151,7 +146,18 @@ const render = (
           safezoneCtx.fillRect(x, y, size, size);
         }
       }
+
+      // Cache the safezone canvas
+      cachedRenderedCanvases.set('safezone', safezoneCanvas);
     }
+
+    // Get the safezone canvas
+    const safezoneCanvas = cachedRenderedCanvases.get('safezone');
+    if (!safezoneCanvas) return;
+
+    // Get the context of the safezone canvas
+    const safezoneCtx = safezoneCanvas.getContext('2d');
+    if (!safezoneCtx) return;
 
     // Show debug info
     if (showDebug) {
@@ -168,32 +174,36 @@ const render = (
       safezoneCtx.fillText(`Time since last react re-render ${humanTime(Date.now() - loadTime)}`, 10, 240);
     }
 
-    // Cache the safezone canvas
-    cachedRenderedCanvases.set('safezone', safezoneCanvas);
+    // Draw the safezone canvas
+    ctx.drawImage(safezoneCanvas, 0, 0);
+
+    // Draw the safezone outline
+    if (showSafezone) {
+      ctx.beginPath();
+      // Draw a box around the viewport it should get small if we zoom out
+      // It should get big if we zoom in
+      // It should be fixed in position on the canvas not the viewport
+      ctx.rect(0, 0, safezone.width + 1, safezone.height + 1);
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Draw instructions above the safezone
+    ctx.font = '20px Arial';
+    ctx.fillStyle = 'black';
+    ctx.fillText('Anything outside of this box will not be visible on the final render', 10, -10);
+
+    // Restore the context to the state before we translated and scaled it
+    ctx.restore();
   }
 
-  // Draw the safezone canvas
-  ctx.drawImage(cachedRenderedCanvases.get('safezone')!, 0, 0);
-
-  // Draw the safezone outline
-  if (showSafezone) {
-    ctx.beginPath();
-    // Draw a box around the viewport it should get small if we zoom out
-    // It should get big if we zoom in
-    // It should be fixed in position on the canvas not the viewport
-    ctx.rect(0, 0, safezone.width + 1, safezone.height + 1);
-    ctx.strokeStyle = 'red';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-
-  // Draw instructions above the safezone
-  ctx.font = '20px Arial';
-  ctx.fillStyle = 'black';
-  ctx.fillText('Anything outside of this box will not be visible on the final render', 10, -10);
-
-  // Restore the context to the state before we translated and scaled it
-  ctx.restore();
+  const viewport = {
+    x: -translatePos.x / scale,
+    y: -translatePos.y / scale,
+    width: window.innerWidth / scale,
+    height: window.innerHeight / scale,
+  };
 
   // Render all the layers
   for (const layer of layers.filter((layer) => layer.visible)) {
@@ -202,8 +212,21 @@ const render = (
 
     // Render the items
     for (const item of itemsWithinViewport) {
+      const beforeEffects = item.effects.filter((effect) => effect.stage === 'before');
+      const afterEffects = item.effects.filter((effect) => effect.stage === 'after');
+
+      // Render the item's before effects
+      for (const effect of beforeEffects) {
+        effect.render(ctx, translatePos, scale);
+      }
+
       // Render the item
       item.render(ctx, translatePos, scale);
+
+      // Render the item's after effects
+      for (const effect of afterEffects) {
+        effect.render(ctx, translatePos, scale);
+      }
 
       // If the item is selected render a border and handles
       if (selectedItem) {
@@ -246,7 +269,7 @@ const render = (
   ctx.restore();
 
   // If we have a brush render it where the mouse is
-  if (activeTool === 'draw') {
+  if (activeTool === 'brush') {
     if (brushSize >= 1) {
       ctx.beginPath();
       ctx.arc(mousePos.x, mousePos.y, brushSize / 2, 0, 2 * Math.PI);
@@ -256,7 +279,7 @@ const render = (
   }
 };
 
-const tools = ['select', 'move', 'draw', 'erase'] as const;
+const tools = ['select', 'move', 'brush', 'erase'] as const;
 
 type ToolsProps = {
   className?: string;
@@ -283,7 +306,7 @@ const Tools = ({
   return (
     <div className={cn('fixed bottom-1 left-1 bg-white dark:bg-[#181818] border border-[#14141414] rounded p-2', className)}>
       <div className="flex flex-col gap-2">
-        {(activeTool === 'draw' || activeTool === 'erase') && (
+        {(activeTool === 'brush' || activeTool === 'erase') && (
           <div className="flex flex-col gap-2">
             <SlideyBoi
               label="Brush Size"
@@ -338,8 +361,51 @@ const Canvas = ({ canvasRef, onMouseDown, onMouseMove, onMouseUp }: CanvasProps)
   />
 );
 
-const RenderMenu = ({ layers }: { layers: Layer[] }) => {
-  const onClick = () => {
+const saveCanvasImageFile = async (canvas: HTMLCanvasElement) => {
+  const imageData = await fetch(canvas.toDataURL('image/png')).then((res) => res.blob());
+
+  try {
+    const imgFileHandle = await window.showSaveFilePicker({
+      types: [
+        {
+          description: 'Image',
+          accept: { 'image/png': ['.png'] },
+        },
+      ],
+      suggestedName: `studio-${new Date().toISOString().replace(/:/g, '-')}.png`,
+    });
+    const writable = await imgFileHandle.createWritable();
+    await writable.write(imageData);
+    await writable.close();
+  } catch (err) {
+    // If the user cancels the save prompt, return
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      return;
+    }
+
+    // Try to save the image using a link
+    saveCanvasImageLink(canvas);
+  }
+};
+
+const saveCanvasImageLink = (canvas: HTMLCanvasElement) => {
+  const link = document.createElement('a');
+  link.download = 'image.png'; // Set the filename for the download
+  link.href = canvas.toDataURL('image/png'); // Create a data URL representing the canvas image
+  document.body.appendChild(link); // Append to the document temporarily
+  link.click(); // Trigger the download
+  document.body.removeChild(link); // Clean up
+};
+
+const randomNumberBetween = (min: number, max: number) => Math.random() * (max - min) + min;
+
+type RenderMenuProps = {
+  layers: Layer[];
+  onLayerUpdate: (layer: Layer) => void;
+};
+
+const RenderMenu = ({ layers, onLayerUpdate }: RenderMenuProps) => {
+  const onSaveImage = () => {
     const canvas = document.createElement('canvas');
     canvas.width = 1920;
     canvas.height = 1080;
@@ -364,15 +430,64 @@ const RenderMenu = ({ layers }: { layers: Layer[] }) => {
       0,
     );
 
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL();
-    a.download = 'render.png';
-    a.click();
+    // Save the canvas as a file
+    saveCanvasImageFile(canvas);
+  };
+
+  const onAddRandomItems = () => {
+    const layer = layers[0];
+    if (!layer) return;
+
+    const items = Array.from({ length: 100 }).map(() => {
+      const x = randomNumberBetween(10, 1920);
+      const y = randomNumberBetween(10, 1080);
+      const width = randomNumberBetween(10, 100);
+      const height = randomNumberBetween(10, 100);
+      return new Item({
+        id: layer.items.length,
+        x,
+        y,
+        width,
+        height,
+        colour: `hsl(${Math.random() * 360}, 100%, 50%)`,
+        rotation: Math.random() * 360,
+        zIndex: 0,
+        canvas: null,
+        effects: [
+          new Glow({
+            blur: randomNumberBetween(100, 1000),
+            colour: `hsl(${Math.random() * 360}, 100%, 50%)`,
+            offsetX: 0,
+            offsetY: 0,
+          }),
+          new Glow({
+            blur: randomNumberBetween(100, 1000),
+            colour: `hsl(${Math.random() * 360}, 100%, 50%)`,
+            offsetX: 0,
+            offsetY: 0,
+          }),
+          new Border({
+            lineWidth: randomNumberBetween(1, 10),
+            colour: `hsl(${Math.random() * 360}, 100%, 50%)`,
+          }),
+        ],
+      });
+    });
+
+    onLayerUpdate({
+      ...layer,
+      items: [...layer.items, ...items],
+    });
   };
 
   return (
-    <div className="fixed top-1 right-1 bg-white dark:bg-[#181818] border border-[#14141414] rounded p-2 z-10">
-      <Button onClick={onClick}>Download</Button>
+    <div className="fixed top-1 right-1 z-10 flex flex-col gap-1">
+      <Button onClick={onSaveImage} className="w-full">
+        Save image
+      </Button>
+      <Button onClick={onAddRandomItems} className="w-full">
+        Add random items
+      </Button>
     </div>
   );
 };
@@ -450,6 +565,7 @@ export const ShowcaseStudio = () => {
         id: prev.length,
         name: `Layer ${prev.length}`,
         visible: true,
+        locked: false,
         items: [],
       },
     ]);
@@ -458,6 +574,18 @@ export const ShowcaseStudio = () => {
   const onLayerUpdate = (layer: Layer) => {
     setLayers((prev) => {
       const index = prev.findIndex((l) => l.id === layer.id);
+
+      // If the layer is being locked/unlocked we should allow that
+      if (prev[index].locked !== layer.locked) {
+        const newLayers = [...prev];
+        newLayers[index] = layer;
+        return newLayers;
+      }
+
+      // If the layer is locked we should not allow the update
+      if (prev[index].locked) return prev;
+
+      // Update the layer
       const newLayers = [...prev];
       newLayers[index] = layer;
       return newLayers;
@@ -477,14 +605,10 @@ export const ShowcaseStudio = () => {
   };
 
   const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const layer = layers[selectedLayer];
-    if (!layer) {
-      // Create a new layer
-      onLayerCreate();
-    }
-
     if (activeTool === 'select') {
       const layer = layers[selectedLayer];
+      if (!layer) return;
+
       const item = layer.items.find((item) =>
         item.isWithinPosition({
           x: e.nativeEvent.offsetX,
@@ -498,7 +622,14 @@ export const ShowcaseStudio = () => {
       }
     }
 
-    if (activeTool === 'erase' || activeTool === 'draw') {
+    // Erase or draw
+    if (activeTool === 'erase' || activeTool === 'brush') {
+      const layer = layers[selectedLayer];
+      if (!layer) {
+        // Create a new layer if there are no layers
+        onLayerCreate();
+      }
+
       // Only activate on left click
       if (e.button !== 0) return;
       isDraggingRef.current = true;
@@ -509,12 +640,15 @@ export const ShowcaseStudio = () => {
     const layer = layers[selectedLayer];
     if (!layer) return;
 
+    // If layer is locked we should not allow any changes
+    if (layer.locked) return;
+
     // Transform mouse coordinates to canvas space
     const mouseX = e.nativeEvent.offsetX / scaleRef.current - translatePosRef.current.x / scaleRef.current;
     const mouseY = e.nativeEvent.offsetY / scaleRef.current - translatePosRef.current.y / scaleRef.current;
 
     // Save the drawing points
-    if (activeTool === 'draw' && isDraggingRef.current) {
+    if (activeTool === 'brush' && isDraggingRef.current) {
       drawingPointsRef.current.push({ x: mouseX, y: mouseY, colour: `hsl(${(delta.current * 10) % 360}, 100%, 50%)` });
     }
 
@@ -535,7 +669,7 @@ export const ShowcaseStudio = () => {
     const layer = layers[selectedLayer];
     if (!layer) return;
 
-    if (activeTool === 'draw') {
+    if (activeTool === 'brush') {
       isDraggingRef.current = false;
 
       const topLeft = drawingPointsRef.current.reduce(
@@ -594,6 +728,7 @@ export const ShowcaseStudio = () => {
         rotation: 0,
         zIndex: 0,
         canvas,
+        effects: [],
       });
 
       // Add the new item to the layer
@@ -701,7 +836,7 @@ export const ShowcaseStudio = () => {
       },
     },
     {
-      name: 'Draw tool',
+      name: 'Brush tool',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 25 25" className="w-4 h-4 fill-black dark:fill-white">
           <path
@@ -712,7 +847,7 @@ export const ShowcaseStudio = () => {
       ),
       description: 'Select the draw tool',
       action: () => {
-        onToolChange('draw');
+        onToolChange('brush');
       },
     },
     {
@@ -778,9 +913,9 @@ export const ShowcaseStudio = () => {
   // Render canvas on the client
   return (
     <>
-      <RenderMenu layers={layers} />
+      <RenderMenu layers={layers} onLayerUpdate={onLayerUpdate} />
       <CommandMenu commands={commands} />
-      <FPSStats />
+      {showDebug && <FPSStats />}
       <Canvas canvasRef={canvasRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} />
       <Tools
         className="z-10"

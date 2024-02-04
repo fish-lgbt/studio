@@ -1,6 +1,8 @@
 'use client';
 
 import { Position } from '@/common/position';
+import { Border } from './effects/border';
+import { Effect } from './effect';
 
 type ItemParams = {
   id: number;
@@ -13,6 +15,7 @@ type ItemParams = {
   image?: string | HTMLImageElement | null;
   canvas?: HTMLCanvasElement | null;
   zIndex?: number;
+  effects?: Effect[];
 };
 
 export class Item {
@@ -25,6 +28,7 @@ export class Item {
   #colour: string;
   #image: HTMLImageElement | null = null;
   #canvas: HTMLCanvasElement | null = null;
+  #effects: Effect[] = [];
   #zIndex: number;
   #erasedPixels: Position[] = [];
 
@@ -37,7 +41,13 @@ export class Item {
     this.#rotation = params.rotation ?? 0;
     this.#colour = params.colour ?? 'transparent';
     this.#canvas = params.canvas ?? null;
+    this.#effects = params.effects ?? [];
     this.#zIndex = params.zIndex ?? 0;
+
+    // Set the effect's item to this item
+    for (const effect of this.#effects) {
+      effect.setItem(this);
+    }
 
     if (params.image && typeof params.image === 'string') {
       const image = new Image();
@@ -82,6 +92,10 @@ export class Item {
     return this.#canvas;
   }
 
+  get effects(): Effect[] {
+    return this.#effects;
+  }
+
   erase(position: Position): void {
     this.#erasedPixels.push(position);
   }
@@ -97,6 +111,7 @@ export class Item {
       colour: this.#colour,
       image: this.#image,
       zIndex: this.#zIndex,
+      effects: this.#effects,
     });
   }
 

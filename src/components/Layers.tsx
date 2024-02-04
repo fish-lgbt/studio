@@ -17,6 +17,7 @@ import { PlusIcon } from './PlusIcon';
 import { Layer } from './beta';
 import { SortableLayer } from './SortableLayer';
 import { cn } from '@/cn';
+import { TrashCanIcon } from './TrashCanIcon';
 
 type LayersProps = {
   layers: Layer[];
@@ -96,8 +97,20 @@ export const Layers = ({
           onClick={() => {
             onLayerCreate();
           }}
+          title="Add Layer"
         >
           <PlusIcon />
+        </Button>
+        <Button
+          className="aspect-square"
+          onClick={() => {
+            const index = layers.findIndex((layer) => layer.id === selectedLayer);
+            onLayerDelete(selectedLayer!);
+            onLayerSelect(layers[index - 1]?.id ?? null);
+          }}
+          title="Delete Layer"
+        >
+          <TrashCanIcon />
         </Button>
       </div>
     </div>

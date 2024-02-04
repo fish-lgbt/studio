@@ -22,7 +22,20 @@ export type Layer = {
   items: Item[];
 };
 
-const randomNumberBetween = (min: number, max: number) => Math.random() * (max - min) + min;
+const loadTime = Date.now();
+
+const humanTime = (ms: number) => {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  // Dont show until we have at least 1 of the unit
+  if (days >= 1) return `${days} days`;
+  if (hours >= 1) return `${hours} hours`;
+  if (minutes >= 1) return `${minutes} minutes`;
+  if (seconds >= 1) return `${seconds} seconds`;
+  return `${ms} ms`;
+};
 
 type RenderParams = {
   /**
@@ -45,19 +58,12 @@ type RenderParams = {
   showSafezone: boolean;
 };
 
-const loadTime = Date.now();
-
-const humanTime = (ms: number) => {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  // Dont show until we have at least 1 of the unit
-  if (days >= 1) return `${days} days`;
-  if (hours >= 1) return `${hours} hours`;
-  if (minutes >= 1) return `${minutes} minutes`;
-  if (seconds >= 1) return `${seconds} seconds`;
-  return `${ms} ms`;
+const cachedRenderedCanvases = new Map<string, HTMLCanvasElement>();
+const lastknownSafezone = {
+  x: 0,
+  y: 0,
+  width: 0,
+  height: 0,
 };
 
 const render = (
@@ -111,7 +117,65 @@ const render = (
   // Scale the canvas
   ctx.scale(scale, scale);
 
-  // Draw the safezone
+  // If the safezone size has changed we should re-render the safezone canvas
+  if (
+    lastknownSafezone.x !== safezone.x ||
+    lastknownSafezone.y !== safezone.y ||
+    lastknownSafezone.width !== safezone.width ||
+    lastknownSafezone.height !== safezone.height
+  ) {
+    console.log('Rendering safezone canvas');
+
+    // Update the last known safezone
+    lastknownSafezone.x = safezone.x;
+    lastknownSafezone.y = safezone.y;
+    lastknownSafezone.width = safezone.width;
+    lastknownSafezone.height = safezone.height;
+
+    // Create a safezone canvas
+    const safezoneCanvas = document.createElement('canvas');
+    safezoneCanvas.width = safezone.width;
+    safezoneCanvas.height = safezone.height;
+
+    // Get the context of the safezone canvas
+    const safezoneCtx = safezoneCanvas.getContext('2d');
+    if (!safezoneCtx) return;
+
+    // Draw the safezone
+    if (showSafezone) {
+      // Fill safezone with a "transparent" checkerboard
+      const size = 20;
+      for (let x = 0; x < safezone.width; x += size) {
+        for (let y = 0; y < safezone.height; y += size) {
+          safezoneCtx.fillStyle = (x + y) % (size * 2) === 0 ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.2)';
+          safezoneCtx.fillRect(x, y, size, size);
+        }
+      }
+    }
+
+    // Show debug info
+    if (showDebug) {
+      // Above the safezone we should write some debug info
+      safezoneCtx.font = '20px Arial';
+      safezoneCtx.fillStyle = 'black';
+      safezoneCtx.fillText(`Scale: ${scale}`, 10, 30);
+      safezoneCtx.fillText(`Translate: ${translatePos.x}, ${translatePos.y}`, 10, 60);
+      safezoneCtx.fillText(`Mouse: ${mousePos.x}, ${mousePos.y}`, 10, 90);
+      safezoneCtx.fillText(`Brush Size: ${brushSize}`, 10, 120);
+      safezoneCtx.fillText(`Brush Colour: ${brushColour}`, 10, 150);
+      safezoneCtx.fillText(`Active Tool: ${activeTool}`, 10, 180);
+      safezoneCtx.fillText(`Frames rendered: ${delta}`, 10, 210);
+      safezoneCtx.fillText(`Time since last react re-render ${humanTime(Date.now() - loadTime)}`, 10, 240);
+    }
+
+    // Cache the safezone canvas
+    cachedRenderedCanvases.set('safezone', safezoneCanvas);
+  }
+
+  // Draw the safezone canvas
+  ctx.drawImage(cachedRenderedCanvases.get('safezone')!, 0, 0);
+
+  // Draw the safezone outline
   if (showSafezone) {
     ctx.beginPath();
     // Draw a box around the viewport it should get small if we zoom out
@@ -121,27 +185,12 @@ const render = (
     ctx.strokeStyle = 'red';
     ctx.lineWidth = 1;
     ctx.stroke();
-
-    // Draw instructions above the safezone
-    ctx.font = '20px Arial';
-    ctx.fillStyle = 'black';
-    ctx.fillText('Anything outside of this box will not be visible on the final render', 10, -10);
   }
 
-  // Show debug info
-  if (showDebug) {
-    // Above the safezone we should write some debug info
-    ctx.font = '20px Arial';
-    ctx.fillStyle = 'black';
-    ctx.fillText(`Scale: ${scale}`, 10, 30);
-    ctx.fillText(`Translate: ${translatePos.x}, ${translatePos.y}`, 10, 60);
-    ctx.fillText(`Mouse: ${mousePos.x}, ${mousePos.y}`, 10, 90);
-    ctx.fillText(`Brush Size: ${brushSize}`, 10, 120);
-    ctx.fillText(`Brush Colour: ${brushColour}`, 10, 150);
-    ctx.fillText(`Active Tool: ${activeTool}`, 10, 180);
-    ctx.fillText(`Frames rendered: ${delta}`, 10, 210);
-    ctx.fillText(`Time since last react re-render ${humanTime(Date.now() - loadTime)}`, 10, 240);
-  }
+  // Draw instructions above the safezone
+  ctx.font = '20px Arial';
+  ctx.fillStyle = 'black';
+  ctx.fillText('Anything outside of this box will not be visible on the final render', 10, -10);
 
   // Restore the context to the state before we translated and scaled it
   ctx.restore();
@@ -429,7 +478,10 @@ export const ShowcaseStudio = () => {
 
   const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const layer = layers[selectedLayer];
-    if (!layer) return;
+    if (!layer) {
+      // Create a new layer
+      onLayerCreate();
+    }
 
     if (activeTool === 'select') {
       const layer = layers[selectedLayer];
@@ -755,47 +807,7 @@ export const ShowcaseStudio = () => {
   );
 };
 
-const getDistance = (touches: Point[]) => {
-  const [touch1, touch2] = touches;
-  const dx = touch1.x - touch2.x;
-  const dy = touch1.y - touch2.y;
-  return Math.sqrt(dx * dx + dy * dy);
-};
-
 const useCanvasZooming = (canvasRef: React.RefObject<HTMLCanvasElement>) => {
   const scaleRef = useRef(1);
-  const lastDistanceRef = useRef<number | null>(null);
-
-  // useEffect(() => {
-  //   const onTouchMove = (e) => {
-  //     if (e.touches.length === 2) {
-  //       // Ensure two fingers are used
-  //       e.preventDefault(); // Prevent the default action (scroll / zoom)
-  //       const distance = getDistance(e.touches);
-
-  //       if (lastDistanceRef.current !== null) {
-  //         const scaleChange = distance / lastDistanceRef.current;
-  //         scaleRef.current *= scaleChange; // Update the scale based on the change in distance
-  //         console.log(`New scale: ${scaleRef.current}`);
-  //         // Here, update your canvas or UI component with the new scale
-  //       }
-
-  //       lastDistanceRef.current = distance; // Update the last distance for the next move event
-  //     }
-  //   };
-
-  //   const onTouchEnd = () => {
-  //     lastDistanceRef.current = null; // Reset when the touch gesture ends
-  //   };
-
-  //   canvasRef.current?.addEventListener('touchmove', onTouchMove, { passive: false });
-  //   canvasRef.current?.addEventListener('touchend', onTouchEnd);
-
-  //   return () => {
-  //     document.removeEventListener('touchmove', onTouchMove);
-  //     document.removeEventListener('touchend', onTouchEnd);
-  //   };
-  // }, [canvasRef]);
-
   return scaleRef;
 };

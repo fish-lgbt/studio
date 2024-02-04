@@ -1,4 +1,4 @@
-import { KeyboardEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Fuse from 'fuse.js';
 import FocusTrap from 'focus-trap-react';
 import { cn } from '@/cn';
@@ -24,9 +24,9 @@ const useCommandMenu = (commands: Command[]) => {
   const [filteredCommands, setFilteredCommands] = useState<Command[]>(commands);
 
   useEffect(() => {
-    const handleKeyDown = (event: any) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       // Open/close the command menu
-      if (event.metaKey && (event.key === 'k' || event.key === 'p')) {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
         event.preventDefault();
         setIsOpen(!isOpen);
 
@@ -71,7 +71,7 @@ export const CommandMenu = ({ commands }: CommandMenuProps) => {
     }
   }, [isOpen]);
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!isOpen) return;
 
     if (event.key === 'Escape') {

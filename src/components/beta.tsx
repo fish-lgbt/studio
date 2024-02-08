@@ -957,6 +957,14 @@ export const ShowcaseStudio = () => {
           }),
         );
         if (item) {
+          metadataElement.current.setMetadata({
+            x: item.x,
+            y: item.y,
+            width: item.width,
+            height: item.height,
+            rotation: item.rotation,
+            colour: item.colour,
+          });
           isDraggingRef.current = true;
           selectedItemsRef.current.add(item.id);
         } else {
@@ -973,6 +981,14 @@ export const ShowcaseStudio = () => {
           }),
         );
         if (item) {
+          metadataElement.current.setMetadata({
+            x: item.x,
+            y: item.y,
+            width: item.width,
+            height: item.height,
+            rotation: item.rotation,
+            colour: item.colour,
+          });
           isDraggingRef.current = true;
           selectedItemsRef.current.clear();
           selectedItemsRef.current.add(item.id);

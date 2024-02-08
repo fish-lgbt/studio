@@ -27,8 +27,10 @@ export class Circle extends Item {
     ctx.restore();
   }
 
-  public containsPoint(x: number, y: number): boolean {
-    return Math.pow(x - this.x, 2) + Math.pow(y - this.y, 2) < Math.pow(this.width / 2, 2);
+  public isWithinPosition({ x, y, width, height }: Position & { width: number; height: number }): boolean {
+    const dx = this.x - Math.max(x, Math.min(this.x, x + width));
+    const dy = this.y - Math.max(y, Math.min(this.y, y + height));
+    return dx * dx + dy * dy < (this.width * this.width) / 4;
   }
 
   public renderBorder(ctx: CanvasRenderingContext2D, translatePos: { x: number; y: number }, scale: number): void {

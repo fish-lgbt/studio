@@ -21,12 +21,12 @@ import { TrashCanIcon } from './TrashCanIcon';
 
 type LayersProps = {
   layers: Layer[];
-  selectedLayer: number | null;
+  selectedLayer: string | null;
   onLayerCreate: () => void;
   onLayerReorder: (layers: Layer[]) => void;
-  onLayerSelect: (id: number) => void;
+  onLayerSelect: (id: string | null) => void;
   onLayerUpdate: (layer: Layer) => void;
-  onLayerDelete: (id: number) => void;
+  onLayerDelete: (id: string | null) => void;
   className?: string;
 };
 
@@ -104,9 +104,7 @@ export const Layers = ({
         <Button
           className="aspect-square"
           onClick={() => {
-            const index = layers.findIndex((layer) => layer.id === selectedLayer);
-            onLayerDelete(selectedLayer!);
-            onLayerSelect(layers[index - 1]?.id ?? null);
+            onLayerDelete(selectedLayer);
           }}
           title="Delete Layer"
         >

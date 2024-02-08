@@ -1,9 +1,11 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 import { Button } from './button';
 import { EyeClosedIcon } from './EyeClosedIcon';
 import { EyeOpenIcon } from './EyeOpenIcon';
-import { Layer } from './beta';
+import { Layer, cachedRenderedCanvases } from './beta';
 import { cn } from '@/cn';
+import { Item } from './item';
 
 const LockIcon = () => {
   return (
@@ -35,14 +37,15 @@ const UnlockIcon = () => {
 
 type LayerBarProps = {
   layer: Layer;
-  selectedLayer: number | null;
-  onLayerSelect: (id: number) => void;
+  selectedLayer: string | null;
+  onLayerSelect: (id: string | null) => void;
   onLayerUpdate: (layer: Layer) => void;
-  onLayerDelete: (id: number) => void;
+  onLayerDelete: (id: string | null) => void;
 };
 export const LayerBar = ({ layer, selectedLayer, onLayerUpdate, onLayerSelect, onLayerDelete }: LayerBarProps) => {
   return (
     <div
+      key={layer.id}
       className={cn('flex flex-row w-full justify-between bg-[#f1f1f3] dark:bg-[#0e0e0e] p-2 gap-2', {
         'border-l-4 border-[#dadada]': selectedLayer === layer.id,
       })}
@@ -59,8 +62,9 @@ export const LayerBar = ({ layer, selectedLayer, onLayerUpdate, onLayerSelect, o
       >
         {layer.visible ? <EyeOpenIcon /> : <EyeClosedIcon />}
       </Button>
-      <div className="w-full">
+      <div className="w-full max-h-56 overflow-y-scroll">
         <div className="overflow-y-hidden text-sm">{layer.name}</div>
+        <Items items={layer.items} />
       </div>
       <Button
         className="aspect-square"
@@ -73,6 +77,54 @@ export const LayerBar = ({ layer, selectedLayer, onLayerUpdate, onLayerSelect, o
       >
         {layer.locked ? <LockIcon /> : <UnlockIcon />}
       </Button>
+    </div>
+  );
+};
+
+type ItemsProps = {
+  items: Item[];
+};
+
+const Items = ({ items }: ItemsProps) => {
+  return (
+    <div className="flex flex-col gap-1">
+      {/* {items.map((item) => {
+        try {
+          const existingCanvas = cachedRenderedCanvases.get(item.id);
+          if (!existingCanvas) {
+            const canvas = document.createElement('canvas');
+            canvas.width = item.width + 20;
+            canvas.height = item.height + 20;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            // Fill the background with white
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Render a "transparent" background
+            const safezoneCanvas = cachedRenderedCanvases.get('safezone');
+            if (safezoneCanvas) ctx.drawImage(safezoneCanvas, 0, 0, safezoneCanvas.width, safezoneCanvas.height);
+
+            // Render the item to its canvas
+            item.render(ctx, { x: -item.x + 10, y: -item.y + 10 }, 1);
+
+            // Cache the canvas
+            cachedRenderedCanvases.set(item.id, canvas);
+          }
+
+          // Convert the canvas to an image
+          const image = cachedRenderedCanvases.get(item.id)?.toDataURL();
+
+          return (
+            <div key={`item-${item.width}`} className="bg-[#dadada] dark:bg-[#3a3a3a] rounded aspect-square">
+              <img src={image} alt="" className="w-full h-full" />
+            </div>
+          );
+        } catch {
+          return 'Oops';
+        }
+      })} */}
     </div>
   );
 };

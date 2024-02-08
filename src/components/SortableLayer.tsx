@@ -7,10 +7,10 @@ import { Layer } from './beta';
 type SortableLayerProps = {
   id: string;
   layer: Layer;
-  selectedLayer: number | null;
-  onLayerSelect: (id: number) => void;
+  selectedLayer: string | null;
+  onLayerSelect: (id: string | null) => void;
   onLayerUpdate: (layer: Layer) => void;
-  onLayerDelete: (id: number) => void;
+  onLayerDelete: (id: string | null) => void;
 };
 export const SortableLayer = ({
   id,

@@ -1,5 +1,6 @@
 'use client';
 
+import '@total-typescript/ts-reset';
 import { useCanvasPanning } from '@/hooks/use-canvas-panning';
 import { useDrawCanvas } from '@/hooks/use-draw-canvas';
 import { useResizeWindow } from '@/hooks/use-resize-window';
@@ -16,9 +17,15 @@ import { CommandMenu } from './command-menu';
 import { TrashCanIcon } from './TrashCanIcon';
 import { Border } from './effects/border';
 import { Glow } from './effects/glow';
+import { PickyPal } from './picky-pal';
+import { Rectangle } from './items/rectangle';
+import { Circle } from './items/circle';
+import { UIElement } from './items/ui-element';
+import { UIButton } from './items/ui-button';
+import { UIMetadata } from './items/ui-metadata';
 
 export type Layer = {
-  id: number;
+  id: string;
   name: string;
   visible: boolean;
   locked: boolean;
@@ -56,17 +63,57 @@ type RenderParams = {
   brushColour: string;
   mousePos: Position;
   brushPoints: Point[];
-  selectedItem: Item | null;
+  selectedItems: Set<string>;
   showDebug: boolean;
   showSafezone: boolean;
+  uiItems: UIElement[];
 };
 
-const cachedRenderedCanvases = new Map<string, HTMLCanvasElement>();
+export const cachedRenderedCanvases = new Map<string, HTMLCanvasElement>();
 const lastknownSafezone = {
   x: 0,
   y: 0,
   width: 0,
   height: 0,
+};
+
+type RenderUIParams = {
+  ctx: CanvasRenderingContext2D;
+  translatePos: Position;
+  scale: number;
+  layers: Layer[];
+  activeTool: (typeof tools)[number];
+  brushSize: number;
+  brushColour: string;
+  mousePos: Position;
+  brushPoints: Point[];
+  selectedItems: Set<string>;
+  uiItems: UIElement[];
+  viewport: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+};
+
+const renderUI = ({ ctx, selectedItems, uiItems, viewport, translatePos, scale }: RenderUIParams) => {
+  // Save the current state of the context
+  ctx.save();
+
+  // Translate the canvas to the current position
+  // ctx.translate(translatePos.x, translatePos.y);
+
+  // Scale the canvas
+  ctx.scale(scale, scale);
+
+  // Render the UI items
+  for (const item of uiItems) {
+    item.render(ctx, translatePos, scale);
+  }
+
+  // Restore the state of the context
+  ctx.restore();
 };
 
 const render = (
@@ -80,9 +127,10 @@ const render = (
     brushColour,
     mousePos,
     brushPoints,
-    selectedItem,
+    selectedItems,
     showDebug,
     showSafezone,
+    uiItems,
   }: RenderParams,
   delta: number,
 ) => {
@@ -96,6 +144,20 @@ const render = (
   // Render a background
   ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+  // Render the amount of items on this in the center of the canvas
+  ctx.font = '20px Arial';
+  ctx.fillStyle = 'black';
+  ctx.fillText(`Items: ${layers.reduce((acc, layer) => acc + layer.items.length, 0)}`, ctx.canvas.width / 2, 30);
+
+  // @ts-expect-error
+  const performanceStats = `Memory: ${window.performance.memory.usedJSHeapSize / 1000000}MB / ${
+    // @ts-expect-error
+    window.performance.memory.jsHeapSizeLimit / 1000000
+  }MB`;
+
+  // Render the performance stats at the bottom center
+  ctx.fillText(performanceStats, (ctx.canvas.width - ctx.measureText(performanceStats).width) / 2, ctx.canvas.height - 30);
 
   // Render the safezone
   if (showSafezone) {
@@ -229,7 +291,7 @@ const render = (
       }
 
       // If the item is selected render a border and handles
-      if (selectedItem) {
+      if (selectedItems.has(item.id)) {
         item.renderBorder(ctx, translatePos, scale);
         item.renderHandles(ctx, translatePos, scale);
       }
@@ -277,9 +339,26 @@ const render = (
       ctx.fill();
     }
   }
+
+  // Draw UI elements
+  // These are drawn last so they are on top of everything else
+  renderUI({
+    ctx,
+    translatePos,
+    scale,
+    layers,
+    activeTool,
+    brushSize,
+    brushColour,
+    mousePos,
+    brushPoints,
+    selectedItems,
+    viewport,
+    uiItems,
+  });
 };
 
-const tools = ['select', 'move', 'brush', 'erase'] as const;
+const tools = ['select', 'move', 'brush', 'erase', 'shape'] as const;
 
 type ToolsProps = {
   className?: string;
@@ -292,6 +371,12 @@ type ToolsProps = {
 
   brushColour: string;
   onBrushColourChange: (colour: string) => void;
+
+  shape: 'rectangle' | 'circle' | 'triangle' | 'line';
+  onShapeChange: (shape: 'rectangle' | 'circle' | 'triangle' | 'line') => void;
+
+  shapeColour: string;
+  onShapeColourChange: (colour: string) => void;
 };
 
 const Tools = ({
@@ -302,6 +387,10 @@ const Tools = ({
   onBrushSizeChange,
   brushColour,
   onBrushColourChange,
+  shape,
+  onShapeChange,
+  shapeColour,
+  onShapeColourChange,
 }: ToolsProps) => {
   return (
     <div className={cn('fixed bottom-1 left-1 bg-white dark:bg-[#181818] border border-[#14141414] rounded p-2', className)}>
@@ -319,12 +408,50 @@ const Tools = ({
               }}
             />
             <div className="flex justify-between gap-2">
-              <label htmlFor="background-colour">Background Colour</label>
+              <label htmlFor="background-colour">Brush Colour</label>
               <input
-                id="background-colour"
+                id="brush-colour"
                 type="color"
                 value={brushColour}
                 onChange={(event) => onBrushColourChange(event.target.value)}
+                className="border border-gray-200 rounded-md"
+              />
+            </div>
+          </div>
+        )}
+        {activeTool === 'shape' && (
+          <div className="flex flex-col gap-2">
+            <PickyPal
+              id="shape-selector"
+              label="Shape"
+              value={shape}
+              onChange={(event) => onShapeChange(event.target.value as 'rectangle' | 'circle' | 'triangle' | 'line')}
+              options={[
+                {
+                  key: 'rectangle',
+                  value: 'Rectangle',
+                },
+                {
+                  key: 'circle',
+                  value: 'circle',
+                },
+                {
+                  key: 'triangle',
+                  value: 'triangle',
+                },
+                {
+                  key: 'line',
+                  value: 'line',
+                },
+              ]}
+            />
+            <div className="flex justify-between gap-2">
+              <label htmlFor="shape-colour">Shape Colour</label>
+              <input
+                id="shape-colour"
+                type="color"
+                value={shapeColour}
+                onChange={(event) => onShapeColourChange(event.target.value)}
                 className="border border-gray-200 rounded-md"
               />
             </div>
@@ -349,17 +476,19 @@ type CanvasProps = {
   onMouseUp: () => void;
 };
 
-const Canvas = ({ canvasRef, onMouseDown, onMouseMove, onMouseUp }: CanvasProps) => (
-  <canvas
-    className="z-0"
-    ref={canvasRef}
-    width={window.innerWidth}
-    height={window.innerHeight}
-    onMouseDown={onMouseDown}
-    onMouseMove={onMouseMove}
-    onMouseUp={onMouseUp}
-  />
-);
+const Canvas = ({ canvasRef, onMouseDown, onMouseMove, onMouseUp }: CanvasProps) => {
+  return (
+    <canvas
+      className="z-0"
+      ref={canvasRef}
+      width={window.innerWidth}
+      height={window.innerHeight}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+    />
+  );
+};
 
 const saveCanvasImageFile = async (canvas: HTMLCanvasElement) => {
   const imageData = await fetch(canvas.toDataURL('image/png')).then((res) => res.blob());
@@ -402,9 +531,10 @@ const randomNumberBetween = (min: number, max: number) => Math.random() * (max -
 type RenderMenuProps = {
   layers: Layer[];
   onLayerUpdate: (layer: Layer) => void;
+  selectedItemsRef: React.MutableRefObject<Set<string>>;
 };
 
-const RenderMenu = ({ layers, onLayerUpdate }: RenderMenuProps) => {
+const RenderMenu = ({ layers, onLayerUpdate, selectedItemsRef }: RenderMenuProps) => {
   const onSaveImage = () => {
     const canvas = document.createElement('canvas');
     canvas.width = 1920;
@@ -423,9 +553,10 @@ const RenderMenu = ({ layers, onLayerUpdate }: RenderMenuProps) => {
         brushColour: 'black',
         mousePos: { x: 0, y: 0 },
         brushPoints: [],
-        selectedItem: null,
+        selectedItems: new Set(),
         showDebug: false,
         showSafezone: false,
+        uiItems: [],
       },
       0,
     );
@@ -444,7 +575,7 @@ const RenderMenu = ({ layers, onLayerUpdate }: RenderMenuProps) => {
       const width = randomNumberBetween(10, 100);
       const height = randomNumberBetween(10, 100);
       return new Item({
-        id: layer.items.length,
+        id: crypto.randomUUID(),
         x,
         y,
         width,
@@ -498,17 +629,41 @@ export const ShowcaseStudio = () => {
   const translatePosRef = useCanvasPanning(canvasRef);
 
   const [layers, setLayers] = useState<Layer[]>([]);
-  const [selectedLayer, setSelectedLayer] = useState<number>(0);
+  const [selectedLayer, setSelectedLayer] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<(typeof tools)[number]>('select');
   const [brushSize, setBrushSize] = useState(10);
-  const [brushColour, setBrushColour] = useState('black');
+  const [brushColour, setBrushColour] = useState('#000000');
+  const [shape, setShape] = useState<'rectangle' | 'circle' | 'triangle' | 'line'>('rectangle');
+  const [shapeColour, setShapeColour] = useState('#000000');
   const [showDebug, setShowDebug] = useState(false);
   const [showSafezone, setShowSafezone] = useState(true);
 
   const isDraggingRef = useRef(false);
+  const initialMousePositionRef = useRef<Position>({ x: 0, y: 0 });
   const mousePositionRef = useRef<Position>({ x: 0, y: 0 });
   const drawingPointsRef = useRef<Point[]>([]);
-  const selectedItemRef = useRef<Item | null>(null);
+  const selectedItemsRef = useRef<Set<string>>(new Set());
+  const hoveredUIItemRef = useRef<UIElement | null>(null);
+  const metadataElement = useRef<UIMetadata>(
+    new UIMetadata({
+      id: crypto.randomUUID(),
+      x: window.innerWidth - 220,
+      y: 135,
+      width: 250,
+      height: 100,
+    }),
+  );
+  const uiItems = useRef<UIElement[]>([
+    new UIButton({
+      id: crypto.randomUUID(),
+      label: 'Click me?',
+      x: window.innerWidth - 120,
+      y: 100,
+      width: 100,
+      height: 25,
+    }),
+    metadataElement.current,
+  ]);
   const delta = useRef(0);
 
   // Reset delta on re-render
@@ -518,11 +673,16 @@ export const ShowcaseStudio = () => {
 
   // Track mouse position
   useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      initialMousePositionRef.current = { x: e.clientX, y: e.clientY };
+    };
     const onMouseMove = (e: MouseEvent) => {
       mousePositionRef.current = { x: e.clientX, y: e.clientY };
     };
+    window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     return () => {
+      window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mousemove', onMouseMove);
     };
   }, []);
@@ -543,32 +703,131 @@ export const ShowcaseStudio = () => {
         brushColour,
         mousePos: mousePositionRef.current,
         brushPoints: drawingPointsRef.current,
-        selectedItem: selectedItemRef.current,
+        selectedItems: selectedItemsRef.current,
         showDebug: showDebug,
         showSafezone: showSafezone,
+        uiItems: uiItems.current,
       },
       delta.current++,
     );
   });
 
+  // Press ctrl+s and save the canvas as an image
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        saveCanvasImageFile(canvas);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, []);
+
+  // Press ctrl+a and select all items
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (e.key === 'a' && (e.metaKey || e.ctrlKey)) {
+        const layer = layers.find((layer) => layer.id === selectedLayer);
+        if (!layer) return;
+
+        selectedItemsRef.current = new Set(layer.items.map((item) => item.id));
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [layers, selectedLayer]);
+
+  // Press delete key and remove all selected items
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        // Remove all selected items
+        setLayers((prev) => {
+          const newLayers = [...prev];
+          return newLayers.map((layer) => ({
+            ...layer,
+            items: layer.items.filter((item) => !selectedItemsRef.current.has(item.id)),
+          }));
+        });
+        // Reset the selected items
+        selectedItemsRef.current.clear();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, []);
+
+  // Press c when an item is selected to center it on the viewport
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (e.key === 'c') {
+        // Move the item to the center of the viewport
+        const layer = layers.find((layer) => layer.id === selectedLayer);
+        if (!layer) return;
+
+        // Find the selected item
+        const item = layer.items.find((item) => selectedItemsRef.current.has(item.id));
+        if (!item) return;
+
+        // Get the current translate position and scale
+        const translatePos = translatePosRef.current;
+        const scale = scaleRef.current;
+        const viewport = {
+          x: -translatePos.x / scale,
+          y: -translatePos.y / scale,
+          width: window.innerWidth / scale,
+          height: window.innerHeight / scale,
+        };
+
+        // Calculate the center of the viewport
+        const centerX = viewport.x + viewport.width / 2;
+        const centerY = viewport.y + viewport.height / 2;
+        const dx = centerX - item.x;
+        const dy = centerY - item.y;
+
+        // Move the item
+        item.moveTo(dx, dy);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [layers, scaleRef, selectedLayer, translatePosRef]);
+
   // Don't render canvas on the server
   if (typeof window === 'undefined') return null;
 
-  const onLayerSelect = (id: number) => {
+  const onLayerSelect = (id: string | null) => {
     setSelectedLayer(id);
   };
 
   const onLayerCreate = () => {
+    const id = crypto.randomUUID();
     setLayers((prev) => [
       ...prev,
       {
-        id: prev.length,
+        id,
         name: `Layer ${prev.length}`,
         visible: true,
         locked: false,
         items: [],
       },
     ]);
+    setSelectedLayer(id);
   };
 
   const onLayerUpdate = (layer: Layer) => {
@@ -592,8 +851,16 @@ export const ShowcaseStudio = () => {
     });
   };
 
-  const onLayerDelete = (id: number) => {
-    setLayers((prev) => prev.filter((layer) => layer.id !== id));
+  const onLayerDelete = (id: string | null) => {
+    if (!id) return;
+
+    const index = layers.findIndex((layer) => layer.id === id);
+    setLayers((prev) => prev.filter((_, layerIndex) => layerIndex !== index));
+    const nextLayer = layers[index + 1] ?? layers[index - 1];
+    setSelectedLayer(nextLayer?.id ?? null);
+
+    // Remove cached rendered canvases for the deleted layer
+    cachedRenderedCanvases.delete(id);
   };
 
   const onLayerReorder = (layers: Layer[]) => {
@@ -605,47 +872,221 @@ export const ShowcaseStudio = () => {
   };
 
   const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Only activate on left click
+    if (e.button !== 0) return;
+
+    // Transform mouse coordinates to canvas space
+    const mouseX = e.nativeEvent.offsetX / scaleRef.current - translatePosRef.current.x / scaleRef.current;
+    const mouseY = e.nativeEvent.offsetY / scaleRef.current - translatePosRef.current.y / scaleRef.current;
+
+    // Check if the user was clicking on a UI element first
+    const uiItem = uiItems.current.find((item) =>
+      item.isWithinPosition({
+        x: e.nativeEvent.offsetX / scaleRef.current,
+        y: e.nativeEvent.offsetY / scaleRef.current,
+        width: 0,
+        height: 0,
+      }),
+    );
+    if (uiItem) {
+      uiItem.onClick();
+      return;
+    }
+
     if (activeTool === 'select') {
-      const layer = layers[selectedLayer];
+      const layer = layers.find((layer) => layer.id === selectedLayer);
       if (!layer) return;
 
       const item = layer.items.find((item) =>
         item.isWithinPosition({
-          x: e.nativeEvent.offsetX,
-          y: e.nativeEvent.offsetY,
+          x: mouseX,
+          y: mouseY,
           width: 0,
           height: 0,
         }),
       );
       if (item) {
-        selectedItemRef.current = item;
+        isDraggingRef.current = true;
+
+        metadataElement.current.setMetadata({
+          x: item.x,
+          y: item.y,
+          width: item.width,
+          height: item.height,
+          rotation: item.rotation,
+          colour: item.colour,
+        });
+
+        // If the ctrl key is pressed we should add the item to the selection
+        // Otherwise set it as the only selected item
+        if (e.metaKey || e.ctrlKey) {
+          selectedItemsRef.current.add(item.id);
+        } else {
+          selectedItemsRef.current.clear();
+          selectedItemsRef.current.add(item.id);
+        }
+      } else {
+        selectedItemsRef.current.clear();
       }
     }
 
     // Erase or draw
     if (activeTool === 'erase' || activeTool === 'brush') {
-      const layer = layers[selectedLayer];
+      const layer = layers.find((layer) => layer.id === selectedLayer);
       if (!layer) {
         // Create a new layer if there are no layers
         onLayerCreate();
       }
+      isDraggingRef.current = true;
+    }
 
-      // Only activate on left click
-      if (e.button !== 0) return;
+    // Move
+    if (activeTool === 'move') {
+      const layer = layers.find((layer) => layer.id === selectedLayer);
+      if (!layer) return;
+
+      // Ctrl + click should add the item to the selection
+      // Click should set the item as the only selected item
+      if (e.metaKey || e.ctrlKey) {
+        const item = layer.items.find((item) =>
+          item.isWithinPosition({
+            x: mouseX,
+            y: mouseY,
+            width: 0,
+            height: 0,
+          }),
+        );
+        if (item) {
+          isDraggingRef.current = true;
+          selectedItemsRef.current.add(item.id);
+        } else {
+          isDraggingRef.current = true;
+          selectedItemsRef.current.clear();
+        }
+      } else {
+        const item = layer.items.find((item) =>
+          item.isWithinPosition({
+            x: mouseX,
+            y: mouseY,
+            width: 0,
+            height: 0,
+          }),
+        );
+        if (item) {
+          isDraggingRef.current = true;
+          selectedItemsRef.current.clear();
+          selectedItemsRef.current.add(item.id);
+        } else {
+          isDraggingRef.current = true;
+          selectedItemsRef.current.clear();
+        }
+      }
+    }
+
+    // Shape
+    if (activeTool === 'shape') {
+      // Create the inital shape
+      const layer = layers.find((layer) => layer.id === selectedLayer);
+      if (!layer) return;
+
+      // Create a new item
+      const item =
+        shape === 'rectangle'
+          ? new Rectangle({
+              id: crypto.randomUUID(),
+              x: mouseX,
+              y: mouseY,
+              width: 5,
+              height: 5,
+              rotation: 0,
+              zIndex: 0,
+              canvas: null,
+              effects: [],
+              colour: shapeColour,
+            })
+          : shape === 'circle'
+          ? new Circle({
+              id: crypto.randomUUID(),
+              x: mouseX,
+              y: mouseY,
+              width: 5,
+              height: 5,
+              rotation: 0,
+              zIndex: 0,
+              canvas: null,
+              effects: [],
+              colour: shapeColour,
+            })
+          : null;
+
+      if (!item) return;
+
+      // Add the new item to the layer
+      setLayers((prev) => {
+        // Clone the array to avoid mutating the previous state directly
+        const newLayers = [...prev];
+
+        // Clone the layer you want to update to avoid mutating it directly
+        const updatedLayer = { ...layer };
+
+        // Update the items in the cloned layer
+        updatedLayer.items = [...updatedLayer.items, item];
+
+        // Replace the original layer with the updated one
+        newLayers[layers.findIndex((layer) => layer.id === selectedLayer)] = updatedLayer;
+
+        return newLayers;
+      });
+
+      metadataElement.current.setMetadata({
+        x: item.x,
+        y: item.y,
+        width: item.width,
+        height: item.height,
+        rotation: item.rotation,
+        colour: item.colour,
+      });
+
+      // Mark the item as selected
+      selectedItemsRef.current.clear();
+      selectedItemsRef.current.add(item.id);
+
+      // Mark the item as being dragged
       isDraggingRef.current = true;
     }
   };
 
   const onMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const layer = layers[selectedLayer];
+    // Transform mouse coordinates to canvas space
+    const mouseX = e.nativeEvent.offsetX / scaleRef.current - translatePosRef.current.x / scaleRef.current;
+    const mouseY = e.nativeEvent.offsetY / scaleRef.current - translatePosRef.current.y / scaleRef.current;
+
+    // Check if the user is hovering a UI element
+    const uiItem = uiItems.current.find((item) =>
+      item.isWithinPosition({
+        x: e.nativeEvent.offsetX / scaleRef.current,
+        y: e.nativeEvent.offsetY / scaleRef.current,
+        width: 0,
+        height: 0,
+      }),
+    );
+    if (uiItem) {
+      uiItem.onHoverStart();
+      hoveredUIItemRef.current = uiItem;
+      return;
+    } else {
+      // If they use to be hovering a UI element but no longer are we should call onHoverEnd
+      if (hoveredUIItemRef.current) {
+        hoveredUIItemRef.current.onHoverStop();
+        hoveredUIItemRef.current = null;
+      }
+    }
+
+    const layer = layers.find((layer) => layer.id === selectedLayer);
     if (!layer) return;
 
     // If layer is locked we should not allow any changes
     if (layer.locked) return;
-
-    // Transform mouse coordinates to canvas space
-    const mouseX = e.nativeEvent.offsetX / scaleRef.current - translatePosRef.current.x / scaleRef.current;
-    const mouseY = e.nativeEvent.offsetY / scaleRef.current - translatePosRef.current.y / scaleRef.current;
 
     // Save the drawing points
     if (activeTool === 'brush' && isDraggingRef.current) {
@@ -653,20 +1094,48 @@ export const ShowcaseStudio = () => {
     }
 
     // Move the item
-    if (activeTool === 'move' && selectedItemRef.current) {
-      setLayers((prev) => {
-        const newLayers = [...prev];
-        const item = newLayers[selectedLayer].items.find((item) => item.id === selectedItemRef.current?.id);
-        if (item) {
-          item.move(mouseX, mouseY);
+    if (activeTool === 'move' && isDraggingRef.current) {
+      const items =
+        layers.find((layer) => layer.id === selectedLayer)?.items.filter((item) => selectedItemsRef.current.has(item.id)) ??
+        [];
+
+      if (items.length >= 1) {
+        // Get the difference between the current and previous mouse position
+        // If we translate the canvas we should also take that into account
+        const dx = mouseX - mousePositionRef.current.x + translatePosRef.current.x / scaleRef.current;
+        const dy = mouseY - mousePositionRef.current.y + translatePosRef.current.y / scaleRef.current;
+        for (const item of items) {
+          item.moveBy(dx, dy);
         }
-        return newLayers;
-      });
+      }
+    }
+
+    // Inside your onMouseMove function for the 'shape' tool
+    if (activeTool === 'shape' && isDraggingRef.current) {
+      const item = layers
+        .find((layer) => layer.id === selectedLayer)
+        ?.items.find((item) => selectedItemsRef.current.has(item.id));
+
+      if (item) {
+        // Initial drag start positions (assuming these are captured correctly elsewhere)
+        const startX = initialMousePositionRef.current.x - translatePosRef.current.x / scaleRef.current;
+        const startY = initialMousePositionRef.current.y - translatePosRef.current.y / scaleRef.current;
+
+        // Calculate new dimensions and position based on drag direction
+        const width = Math.abs(mouseX - startX);
+        const height = Math.abs(mouseY - startY);
+        const newX = Math.min(mouseX, startX);
+        const newY = Math.min(mouseY, startY);
+
+        // Update the item's position and size
+        item.moveTo(newX, newY);
+        item.resize(width, height);
+      }
     }
   };
 
   const onMouseUp = () => {
-    const layer = layers[selectedLayer];
+    const layer = layers.find((layer) => layer.id === selectedLayer);
     if (!layer) return;
 
     if (activeTool === 'brush') {
@@ -720,7 +1189,7 @@ export const ShowcaseStudio = () => {
 
       // Create a new item
       const item = new Item({
-        id: layer.items.length,
+        id: crypto.randomUUID(),
         x,
         y,
         width,
@@ -733,13 +1202,33 @@ export const ShowcaseStudio = () => {
 
       // Add the new item to the layer
       setLayers((prev) => {
+        // Clone the array to avoid mutating the previous state directly
         const newLayers = [...prev];
-        newLayers[selectedLayer].items.push(item);
+
+        // Clone the layer you want to update to avoid mutating it directly
+        const updatedLayer = { ...layer };
+
+        // Update the items in the cloned layer
+        updatedLayer.items = [...updatedLayer.items, item];
+
+        // Replace the original layer with the updated one
+        newLayers[layers.findIndex((layer) => layer.id === selectedLayer)] = updatedLayer;
+
         return newLayers;
       });
 
       // Clear the drawing points
       drawingPointsRef.current = [];
+    }
+
+    // Move
+    if (activeTool === 'move') {
+      isDraggingRef.current = false;
+    }
+
+    // Shape
+    if (activeTool === 'shape') {
+      isDraggingRef.current = false;
     }
   };
 
@@ -749,6 +1238,14 @@ export const ShowcaseStudio = () => {
 
   const onBrushColourChange = (colour: string) => {
     setBrushColour(colour);
+  };
+
+  const onShapeChange = (shape: 'rectangle' | 'circle' | 'triangle' | 'line') => {
+    setShape(shape);
+  };
+
+  const onShapeColourChange = (colour: string) => {
+    setShapeColour(colour);
   };
 
   const commands = [
@@ -913,9 +1410,9 @@ export const ShowcaseStudio = () => {
   // Render canvas on the client
   return (
     <>
-      <RenderMenu layers={layers} onLayerUpdate={onLayerUpdate} />
+      {/* <RenderMenu layers={layers} onLayerUpdate={onLayerUpdate} selectedItemsRef={selectedItemsRef} /> */}
       <CommandMenu commands={commands} />
-      {showDebug && <FPSStats />}
+      <FPSStats />
       <Canvas canvasRef={canvasRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} />
       <Tools
         className="z-10"
@@ -927,6 +1424,10 @@ export const ShowcaseStudio = () => {
         onBrushSizeChange={onBrushSizeChange}
         brushColour={brushColour}
         onBrushColourChange={onBrushColourChange}
+        shape={shape}
+        onShapeChange={onShapeChange}
+        shapeColour={shapeColour}
+        onShapeColourChange={onShapeColourChange}
       />
       <Layers
         className="z-10"

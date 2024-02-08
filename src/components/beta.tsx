@@ -151,13 +151,13 @@ const render = (
   ctx.fillText(`Items: ${layers.reduce((acc, layer) => acc + layer.items.length, 0)}`, ctx.canvas.width / 2, 30);
 
   // @ts-expect-error
-  const performanceStats = `Memory: ${window.performance.memory.usedJSHeapSize / 1000000}MB / ${
-    // @ts-expect-error
-    window.performance.memory.jsHeapSizeLimit / 1000000
-  }MB`;
+  const memory = window.performance.memory;
+  if (memory) {
+    const performanceStats = `Memory: ${memory.usedJSHeapSize / 1000000}MB / ${memory.jsHeapSizeLimit / 1000000}MB`;
 
-  // Render the performance stats at the bottom center
-  ctx.fillText(performanceStats, (ctx.canvas.width - ctx.measureText(performanceStats).width) / 2, ctx.canvas.height - 30);
+    // Render the performance stats at the bottom center
+    ctx.fillText(performanceStats, (ctx.canvas.width - ctx.measureText(performanceStats).width) / 2, ctx.canvas.height - 30);
+  }
 
   // Render the safezone
   if (showSafezone) {

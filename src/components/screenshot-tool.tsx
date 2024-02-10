@@ -783,12 +783,6 @@ export const ScreenshotTool = () => {
         <FlipVerticalIcon />
       </Button>
       <Button
-        longPressDuration={100}
-        onLongPress={() => {
-          setImageRotation((imageRotation) => {
-            return imageRotation + 10;
-          });
-        }}
         onClick={(e) => {
           e.preventDefault();
           setImageRotation((imageRotation) => {
@@ -799,12 +793,6 @@ export const ScreenshotTool = () => {
         <RotateIcon rotation={imageRotation} />
       </Button>
       <Button
-        longPressDuration={100}
-        onLongPress={() => {
-          setImageRotation((imageRotation) => {
-            return imageRotation - 10;
-          });
-        }}
         onClick={(e) => {
           e.preventDefault();
           setImageRotation((imageRotation) => {

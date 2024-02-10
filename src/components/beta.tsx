@@ -912,7 +912,9 @@ export const ShowcaseStudio = () => {
       // Ctrl + click should add the item to the selection
       // Click should set the item as the only selected item
       if (e.metaKey || e.ctrlKey) {
-        const item = layer.items.find((item) =>
+        // Get the last item that is within the position
+        // This allows us to respect draw order
+        const item = layer.items.findLast((item) =>
           item.isWithinPosition({
             x: mouseX,
             y: mouseY,
@@ -928,7 +930,9 @@ export const ShowcaseStudio = () => {
           selectedItemsRef.current.clear();
         }
       } else {
-        const item = layer.items.find((item) =>
+        // Get the last item that is within the position
+        // This allows us to respect draw order
+        const item = layer.items.findLast((item) =>
           item.isWithinPosition({
             x: mouseX,
             y: mouseY,

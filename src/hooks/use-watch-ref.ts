@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 export const useWatchRef = <T>(ref: React.MutableRefObject<T>, interval: number = 100) => {
-  const [isDirty, setIsDirty] = useState(false);
+  const [dirtyBit, updateDirtyBit] = useState(0);
   const previousRef = useRef<T>(ref.current);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
@@ -14,17 +14,10 @@ export const useWatchRef = <T>(ref: React.MutableRefObject<T>, interval: number 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       previousRef.current = ref.current;
-      setIsDirty(true);
+      updateDirtyBit(() => dirtyBit + 1);
     }, interval);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [ref, interval]);
-
-  // Reset the dirty state
-  useEffect(() => {
-    if (isDirty) {
-      setIsDirty(false);
-    }
-  }, [isDirty]);
+  }, [ref, interval, dirtyBit]);
 };

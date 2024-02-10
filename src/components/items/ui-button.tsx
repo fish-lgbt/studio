@@ -1,10 +1,11 @@
 import { Item, ItemParams } from '../item';
+import { UIElement } from './ui-element';
 
 type UIButtonParams = ItemParams & {
   label: string;
 };
 
-export class UIButton extends Item {
+export class UIButton extends UIElement {
   #label: string;
   #hovering: boolean = false;
 

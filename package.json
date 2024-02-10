@@ -16,15 +16,20 @@
     "focus-trap-react": "^10.2.3",
     "fuse.js": "^7.0.0",
     "gif-frames": "^1.0.1",
+    "lodash": "^4.17.21",
+    "million": "^3.0.3",
     "next": "14.1.0",
     "react": "^18",
     "react-dom": "^18",
     "react-dropzone": "^14.2.3",
     "react-fps-stats": "^0.3.1",
-    "tailwind-merge": "^2.2.1"
+    "tailwind-merge": "^2.2.1",
+    "to-px": "^1.1.0",
+    "tw-to-css": "^0.0.12"
   },
   "devDependencies": {
     "@total-typescript/ts-reset": "^0.5.1",
+    "@types/lodash": "^4.14.202",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

@@ -5,10 +5,11 @@ import { Effect } from './effect';
 
 export type ItemParams = {
   id: string;
-  x: number;
-  y: number;
   width: number;
   height: number;
+
+  x?: number;
+  y?: number;
   rotation?: number;
   colour?: string;
   image?: string | HTMLImageElement | null;
@@ -33,10 +34,12 @@ export class Item {
   #zIndex: number;
   #erasedPixels: Position[] = [];
 
+  // protected history = history();
+
   constructor(params: ItemParams) {
     this.#id = params.id;
-    this.#x = params.x;
-    this.#y = params.y;
+    this.#x = params.x ?? 0;
+    this.#y = params.y ?? 0;
     this.#width = params.width;
     this.#height = params.height;
     this.#rotation = params.rotation ?? 0;
@@ -54,6 +57,10 @@ export class Item {
       const image = new Image();
       image.src = params.image;
       this.#image = image;
+    }
+
+    if (params.image && typeof params.image !== 'string') {
+      this.#image = params.image;
     }
   }
 
@@ -245,10 +252,21 @@ export class Item {
 
     // Draw the handles
     ctx.fillStyle = 'pink';
-    ctx.fillRect(0, 0, 10, 10);
-    ctx.fillRect(this.#width - 10, 0, 10, 10);
-    ctx.fillRect(0, this.#height - 10, 10, 10);
-    ctx.fillRect(this.#width - 10, this.#height - 10, 10, 10);
+    // Offset the handles by 5 pixels
+    ctx.fillRect(-5, -5, 10, 10);
+    ctx.fillRect(this.#width - 5, -5, 10, 10);
+    ctx.fillRect(-5, this.#height - 5, 10, 10);
+    ctx.fillRect(this.#width - 5, this.#height - 5, 10, 10);
+
+    // Draw the size in a label below the item
+    const labelText = `${this.#width}x${this.#height}`;
+    const labelSize = ctx.measureText(labelText);
+    ctx.fillRect(this.#width / 2 - labelSize.width / 2 - 5, this.#height + 10, labelSize.width + 10, 20);
+    ctx.font = '12px Arial';
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labelText, this.#width / 2, this.#height + 20);
 
     // Restore the state of the context
     ctx.restore();

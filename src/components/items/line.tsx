@@ -1,10 +1,10 @@
 import { Position } from '@/common/position';
 import { Item, ItemParams } from '../item';
 
-export type CircleParams = ItemParams;
+type LineParams = ItemParams;
 
-export class Circle extends Item {
-  constructor(params: CircleParams) {
+export class Line extends Item {
+  constructor(params: LineParams) {
     super(params);
   }
 
@@ -19,21 +19,16 @@ export class Circle extends Item {
 
     ctx.fillStyle = this.colour;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.width / 2, 0, 2 * Math.PI);
-    ctx.fill();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + this.width, this.y + this.height);
+    ctx.stroke();
     ctx.closePath();
 
     // Restore the state of the context
     ctx.restore();
   }
 
-  public isWithinPosition({ x, y, width, height }: Position & { width: number; height: number }): boolean {
-    const dx = this.x - Math.max(x, Math.min(this.x, x + width));
-    const dy = this.y - Math.max(y, Math.min(this.y, y + height));
-    return dx * dx + dy * dy < (this.width * this.width) / 4;
-  }
-
-  public renderBorder(ctx: CanvasRenderingContext2D, translatePos: { x: number; y: number }, scale: number): void {
+  public renderBorder(ctx: CanvasRenderingContext2D, translatePos: Position, scale: number): void {
     // Save the current state of the context
     ctx.save();
 
@@ -44,7 +39,8 @@ export class Circle extends Item {
 
     ctx.strokeStyle = 'black';
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.width / 2, 0, 2 * Math.PI);
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + this.width, this.y + this.height);
     ctx.stroke();
     ctx.closePath();
 
@@ -59,14 +55,17 @@ export class Circle extends Item {
     // Apply transformations for drawing the item
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
-    ctx.rotate((this.rotation * Math.PI) / 180);
 
-    // Draw the handles
-    ctx.fillStyle = 'pink';
-    ctx.fillRect(this.x - 5, this.y - this.width / 2 - 5, 10, 10);
-    ctx.fillRect(this.x + this.width / 2 - 5, this.y - 5, 10, 10);
-    ctx.fillRect(this.x - 5, this.y + this.width / 2 - 5, 10, 10);
-    ctx.fillRect(this.x - this.width / 2 - 5, this.y - 5, 10, 10);
+    ctx.fillStyle = 'black';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.arc(this.x + this.width, this.y + this.height, 5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.closePath();
 
     // Restore the state of the context
     ctx.restore();

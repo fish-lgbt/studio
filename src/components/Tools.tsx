@@ -41,8 +41,8 @@ export const Tools = ({
   onShapeColourChange,
 }: ToolsProps) => {
   return (
-    <div className={cn('fixed bottom-1 left-1 bg-white dark:bg-[#181818] border border-[#14141414] rounded p-2', className)}>
-      <div className="flex flex-col gap-2">
+    <div className={cn('absolute top-1 flex justify-center w-full', className)}>
+      <div className="relative flex flex-col gap-2 w-fit  bg-white dark:bg-[#181818] border border-[#14141414] rounded p-2">
         {(activeTool === 'brush' || activeTool === 'erase') && (
           <div className="flex flex-col gap-2">
             <SlideyBoi
@@ -77,7 +77,7 @@ export const Tools = ({
               options={[
                 {
                   key: 'rectangle',
-                  value: 'Rectangle',
+                  value: 'rectangle',
                 },
                 {
                   key: 'circle',

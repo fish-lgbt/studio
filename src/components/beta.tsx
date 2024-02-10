@@ -122,11 +122,6 @@ const render = (
   ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  // Render the amount of items on this in the center of the canvas
-  ctx.font = '20px Arial';
-  ctx.fillStyle = 'black';
-  ctx.fillText(`Items: ${layers.reduce((acc, layer) => acc + layer.items.length, 0)}`, ctx.canvas.width / 2, 30);
-
   // @ts-expect-error
   const memory = window.performance.memory;
   if (memory) {
@@ -702,7 +697,9 @@ export const ShowcaseStudio = () => {
   // Press ctrl+s and save the canvas as an image
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault();
+      // Check if canvas is focused
+      if (document.activeElement !== canvasRef.current) return;
+
       if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         const canvas = canvasRef.current;
@@ -719,8 +716,11 @@ export const ShowcaseStudio = () => {
   // Press ctrl+a and select all items
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault();
+      // Check if canvas is focused
+      if (document.activeElement !== canvasRef.current) return;
+
       if (e.key === 'a' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
         const layer = layers.find((layer) => layer.id === selectedLayer);
         if (!layer) return;
 
@@ -736,8 +736,11 @@ export const ShowcaseStudio = () => {
   // Press delete key and remove all selected items
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault();
+      // Check if canvas is focused
+      if (document.activeElement !== canvasRef.current) return;
+
       if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
         // Remove all selected items
         setLayers((prev) => {
           const newLayers = [...prev];
@@ -759,8 +762,12 @@ export const ShowcaseStudio = () => {
   // Press c when an item is selected to center it on the viewport
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault();
+      // Check if canvas is focused
+      if (document.activeElement !== canvasRef.current) return;
+
       if (e.key === 'c') {
+        e.preventDefault();
+
         // Move the item to the center of the viewport
         const layer = layers.find((layer) => layer.id === selectedLayer);
         if (!layer) return;

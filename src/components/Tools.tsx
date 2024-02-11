@@ -108,7 +108,7 @@ export const Tools = ({ className, tools, activeTool, onToolChange }: ToolsProps
       {/* Menu bar */}
       <MenuBar tools={tools} activeTool={activeTool} onToolChange={onToolChange} />
       {/* Tool properties */}
-      <ToolProperties tools={tools} activeTool={activeTool} />
+      <ToolProperties tools={tools} />
     </div>
   );
 };

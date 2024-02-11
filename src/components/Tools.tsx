@@ -1,8 +1,9 @@
 'use client';
+import { useState } from 'react';
 import { Button } from './button';
 import { cn } from '@/cn';
 
-type Tool = {
+export type Tool = {
   /**
    * Name of the tool
    */
@@ -16,9 +17,9 @@ type Tool = {
    */
   onClick: () => void;
   /**
-   * Description of the tool
+   * Text to display when the tool is hovered
    */
-  description?: string;
+  helpText?: string;
   /*
    * Keyboard shortcut for the tool
    */
@@ -30,7 +31,7 @@ type Tool = {
   /**
    * Properties panel for the tool
    */
-  properties?: React.ReactNode;
+  properties?: () => React.ReactNode;
 };
 
 type MenuBarProps<Tools extends Tool[]> = {
@@ -40,6 +41,7 @@ type MenuBarProps<Tools extends Tool[]> = {
 };
 
 const MenuBar = <Tools extends Tool[]>({ tools, activeTool, onToolChange }: MenuBarProps<Tools>) => {
+  const [hoveredTool, setHoveredTool] = useState<string | null>(null);
   return (
     <div className="absolute md:top-1 flex justify-center w-full">
       <div className="relative flex flex-row gap-2 w-full md:w-fit overflow-x-scroll justify-center bg-white dark:bg-[#181818] border border-[#14141414] md:rounded p-2">
@@ -53,6 +55,7 @@ const MenuBar = <Tools extends Tool[]>({ tools, activeTool, onToolChange }: Menu
               // Call the tool's onClick function
               tool.onClick();
             }}
+            onMouseOver={() => setHoveredTool(tool.name)}
             active={tool.isActive}
             className="relative rounded"
           >
@@ -62,6 +65,13 @@ const MenuBar = <Tools extends Tool[]>({ tools, activeTool, onToolChange }: Menu
             </div>
           </Button>
         ))}
+      </div>
+
+      {/* Help text */}
+      <div className="absolute left-1/2 transform -translate-x-1/2 -bottom-5 text-xs text-white dark:text-black">
+        {hoveredTool
+          ? tools.find((tool) => tool.name === hoveredTool)?.helpText
+          : tools.find((tool) => tool.name === activeTool)?.helpText}
       </div>
     </div>
   );
@@ -79,7 +89,7 @@ const ToolProperties = ({ tools, activeTool }: ToolPropertiesProps) => {
   return (
     <div className="absolute left-1 top-1/2 transform -translate-y-1/2 w-[250px]">
       <div className="relative flex flex-row gap-2 w-fit bg-white dark:bg-[#181818] border border-[#14141414] rounded p-2">
-        {tool.properties}
+        {tool.properties()}
       </div>
     </div>
   );

@@ -11,6 +11,8 @@ type PieChartParams = CircleParams & {
 };
 
 export class PieChart extends Circle {
+  public readonly type: string = 'pie-chart';
+
   #slices: Slice[];
 
   constructor(params: PieChartParams) {

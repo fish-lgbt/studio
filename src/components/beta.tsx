@@ -20,7 +20,7 @@ import { Circle } from './items/circle';
 import { Triangle } from './items/triangle';
 import { Line } from './items/line';
 import { useWatchRef } from '@/hooks/use-watch-ref';
-import { Tools } from './Tools';
+import { Tool, Tools } from './Tools';
 import { MoveIcon } from './icons/move-icon';
 import { CircleIcon } from './icons/circle-icon';
 import { EraserIcon } from './icons/eraser-icon';
@@ -29,6 +29,8 @@ import { TriangleIcon } from './icons/triangle-icon';
 import { PencilIcon } from './icons/pencil-icon';
 import { SquareIcon } from './icons/square-icon';
 import { ImageIcon } from './icons/image-icon';
+import { TextIcon } from './icons/text-icon';
+import { Drawing } from './items/drawing';
 
 export type Layer = {
   id: string;
@@ -1097,8 +1099,8 @@ export const ShowcaseStudio = () => {
         ctx.stroke();
       }
 
-      // Create a new item
-      const item = new Item({
+      // Create a new drawing
+      const item = new Drawing({
         id: crypto.randomUUID(),
         x,
         y,
@@ -1310,11 +1312,11 @@ export const ShowcaseStudio = () => {
     setActiveTool('move');
   };
 
-  const tools = [
+  const tools: Tool[] = [
     {
       name: 'move',
       icon: <MoveIcon />,
-      description: 'Select the move tool',
+      helpText: 'To move items around the canvas click and drag them, hold ctrl to select multiple items',
       shortcut: '1',
       isActive: activeTool === 'move',
       onClick() {
@@ -1322,46 +1324,30 @@ export const ShowcaseStudio = () => {
       },
     },
     {
-      name: 'brush',
-      icon: <PencilIcon />,
-      description: 'Select the draw tool',
-      shortcut: '2',
-      isActive: activeTool === 'brush',
-      onClick() {
-        setActiveTool('brush');
-      },
-    },
-    // @TODO: Implement erase tool
-    // {
-    //   name: 'erase',
-    //   icon: <EraserIcon />,
-    //   description: 'Select the erase tool',
-    //   shortcut: '3',
-    //   isActive: activeTool === 'erase',
-    //   onClick() {
-    //     setActiveTool('erase');
-    //   },
-    // },
-    {
       name: 'rectangle',
       icon: <SquareIcon />,
-      description: 'Select the rectangle tool',
-      shortcut: '4',
+      helpText: 'Click and drag to draw a rectangle, hold shift to draw a square',
+      shortcut: '2',
       isActive: activeTool === 'shape' && shape === 'rectangle',
       onClick() {
         setActiveTool('shape');
         setShape('rectangle');
       },
-    },
-    {
-      name: 'circle',
-      icon: <CircleIcon />,
-      description: 'Select the circle tool',
-      shortcut: '5',
-      isActive: activeTool === 'shape' && shape === 'circle',
-      onClick() {
-        setActiveTool('shape');
-        setShape('circle');
+      properties() {
+        return (
+          <div className="flex items-center justify-center space-x-4">
+            <div>
+              <span>Colour</span>
+              <input
+                type="color"
+                value={shapeColour}
+                onChange={(e) => {
+                  setShapeColour(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+        );
       },
     },
     // @TODO: Implement triangle and line tools
@@ -1369,18 +1355,29 @@ export const ShowcaseStudio = () => {
     //   name: 'triangle',
     //   icon: <TriangleIcon />,
     //   description: 'Select the triangle tool',
-    //   shortcut: '6',
+    //   shortcut: '3',
     //   isActive: activeTool === 'shape' && shape === 'triangle',
     //   onClick() {
     //     setActiveTool('shape');
     //     setShape('triangle');
     //   },
     // },
+    {
+      name: 'circle',
+      icon: <CircleIcon />,
+      helpText: 'Click and drag to draw a circle',
+      shortcut: '4',
+      isActive: activeTool === 'shape' && shape === 'circle',
+      onClick() {
+        setActiveTool('shape');
+        setShape('circle');
+      },
+    },
     // {
     //   name: 'line',
     //   icon: <LineIcon />,
     //   description: 'Select the line tool',
-    //   shortcut: '7',
+    //   shortcut: '6',
     //   isActive: activeTool === 'shape' && shape === 'line',
     //   onClick() {
     //     setActiveTool('shape');
@@ -1388,10 +1385,30 @@ export const ShowcaseStudio = () => {
     //   },
     // },
     {
+      name: 'brush',
+      icon: <PencilIcon />,
+      helpText: 'Click and drag to draw on the canvas',
+      shortcut: '7',
+      isActive: activeTool === 'brush',
+      onClick() {
+        setActiveTool('brush');
+      },
+    },
+    // {
+    //   name: 'text',
+    //   icon: <TextIcon />,
+    //   helpText: 'Click to add text to the canvas',
+    //   shortcut: '8',
+    //   isActive: activeTool === 'text',
+    //   onClick() {
+    //     setActiveTool('text');
+    //   },
+    // },
+    {
       name: 'image',
       icon: <ImageIcon />,
-      description: 'Select the image tool',
-      shortcut: '8',
+      helpText: 'Click to add an image to the canvas',
+      shortcut: '9',
       isActive: activeTool === 'image',
       onClick() {
         // Clear the selected items
@@ -1450,6 +1467,17 @@ export const ShowcaseStudio = () => {
         // Trigger the file picker
         input.click();
       },
+      // @TODO: Implement erase tool
+      // {
+      //   name: 'erase',
+      //   icon: <EraserIcon />,
+      //   description: 'Select the erase tool',
+      //   shortcut: '0',
+      //   isActive: activeTool === 'erase',
+      //   onClick() {
+      //     setActiveTool('erase');
+      //   },
+      // },
     },
   ];
 

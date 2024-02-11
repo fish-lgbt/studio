@@ -4,6 +4,8 @@ import { Item, ItemParams } from '../item';
 type LineParams = ItemParams;
 
 export class Line extends Item {
+  public readonly type: string = 'line';
+
   constructor(params: LineParams) {
     super(params);
   }

@@ -21,6 +21,8 @@ export type ItemParams = {
 const renderedItemCache = new Map<string, HTMLCanvasElement>();
 
 export class Item {
+  public readonly type: string = 'item';
+
   #id: string;
   #x: number;
   #y: number;

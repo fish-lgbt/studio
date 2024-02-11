@@ -4,6 +4,8 @@ import { Item, ItemParams } from '../item';
 export type CircleParams = ItemParams;
 
 export class Circle extends Item {
+  public readonly type: string = 'circle';
+
   constructor(params: CircleParams) {
     super(params);
   }

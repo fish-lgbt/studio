@@ -1,6 +1,7 @@
 'use client';
 import { Button } from '@/components/button';
 import dynamic from 'next/dynamic';
+import Head from 'next/head';
 import { useEffect, useState } from 'react';
 
 const ShowcaseStudio = dynamic(() => import('@/components/beta').then((mod) => ({ default: mod.ShowcaseStudio })), {
@@ -61,8 +62,35 @@ export default function Page() {
   }
 
   return (
-    <main className="flex flex-col gap-2">
-      <ShowcaseStudio />
-    </main>
+    <>
+      <Head>
+        <style>{`
+          /* Disable scrolling */
+          html,
+          body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+          }
+  
+          body:not(canvas) {
+            touch-action: none;
+          }
+  
+          /* Disable text selection */
+          body {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+          }
+        `}</style>
+      </Head>
+      <main className="flex flex-col gap-2">
+        <ShowcaseStudio />
+      </main>
+    </>
   );
 }

@@ -3,6 +3,8 @@ import { Item, ItemParams } from '../item';
 type RectangleParams = ItemParams;
 
 export class Rectangle extends Item {
+  public readonly type: string = 'rectangle';
+
   constructor(params: RectangleParams) {
     super(params);
   }

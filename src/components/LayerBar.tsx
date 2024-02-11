@@ -3,9 +3,21 @@
 import { Button } from './button';
 import { EyeClosedIcon } from './EyeClosedIcon';
 import { EyeOpenIcon } from './EyeOpenIcon';
-import { Layer, cachedRenderedCanvases } from './beta';
+import { Layer } from './beta';
 import { cn } from '@/cn';
 import { Item } from './item';
+import {
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  MouseSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
 const LockIcon = () => {
   return (
@@ -64,7 +76,15 @@ export const LayerBar = ({ layer, selectedLayer, onLayerUpdate, onLayerSelect, o
       </Button>
       <div className="w-full max-h-56 overflow-y-scroll">
         <div className="overflow-y-hidden text-sm">{layer.name}</div>
-        <Items items={layer.items} />
+        <Items
+          items={layer.items}
+          onItemsReorder={(items) => {
+            onLayerUpdate({
+              ...layer,
+              items,
+            });
+          }}
+        />
       </div>
       <Button
         className="aspect-square"
@@ -83,48 +103,50 @@ export const LayerBar = ({ layer, selectedLayer, onLayerUpdate, onLayerSelect, o
 
 type ItemsProps = {
   items: Item[];
+  onItemsReorder: (items: Item[]) => void;
 };
 
-const Items = ({ items }: ItemsProps) => {
+const Items = ({ items, onItemsReorder }: ItemsProps) => {
+  // const pointerSensor = useSensor(PointerSensor, {
+  //   activationConstraint: {
+  //     distance: 0.01,
+  //   },
+  // });
+  // const mouseSensor = useSensor(MouseSensor);
+  // const touchSensor = useSensor(TouchSensor);
+  // const keyboardSensor = useSensor(KeyboardSensor);
+  // const sensors = useSensors(pointerSensor, mouseSensor, touchSensor, keyboardSensor);
+
+  // const handleDragEnd = (event: DragEndEvent) => {
+  //   const { active, over } = event;
+
+  //   if (over && active.id !== over.id) {
+  //     const oldIndex = items.findIndex((item) => item.id.toString() === active.id);
+  //     const newIndex = items.findIndex((item) => item.id.toString() === over.id);
+  //     const newItems = arrayMove(items, oldIndex, newIndex);
+  //     onItemsReorder(newItems);
+  //   }
+  // };
+
   return (
     <div className="flex flex-col gap-1">
-      {/* {items.map((item) => {
-        try {
-          const existingCanvas = cachedRenderedCanvases.get(item.id);
-          if (!existingCanvas) {
-            const canvas = document.createElement('canvas');
-            canvas.width = item.width + 20;
-            canvas.height = item.height + 20;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-
-            // Fill the background with white
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Render a "transparent" background
-            const safezoneCanvas = cachedRenderedCanvases.get('safezone');
-            if (safezoneCanvas) ctx.drawImage(safezoneCanvas, 0, 0, safezoneCanvas.width, safezoneCanvas.height);
-
-            // Render the item to its canvas
-            item.render(ctx, { x: -item.x + 10, y: -item.y + 10 }, 1);
-
-            // Cache the canvas
-            cachedRenderedCanvases.set(item.id, canvas);
-          }
-
-          // Convert the canvas to an image
-          const image = cachedRenderedCanvases.get(item.id)?.toDataURL();
-
-          return (
-            <div key={`item-${item.width}`} className="bg-[#dadada] dark:bg-[#3a3a3a] rounded aspect-square">
-              <img src={image} alt="" className="w-full h-full" />
-            </div>
-          );
-        } catch {
-          return 'Oops';
-        }
-      })} */}
+      {/* <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items} strategy={verticalListSortingStrategy}> */}
+      {items.map((item) => {
+        return (
+          <div key={item.id} className="flex flex-row gap-2">
+            <div
+              className="w-4 h-4 rounded border"
+              style={{
+                backgroundColor: item.colour,
+              }}
+            />
+            <div className="text-xs">{item.type}</div>
+          </div>
+        );
+      })}
+      {/* </SortableContext>
+      </DndContext> */}
     </div>
   );
 };

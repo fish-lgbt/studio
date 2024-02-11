@@ -20,8 +20,15 @@ import { Circle } from './items/circle';
 import { Triangle } from './items/triangle';
 import { Line } from './items/line';
 import { useWatchRef } from '@/hooks/use-watch-ref';
-import { ToolType, Tools, ToolsTypes } from './Tools';
-import { cn } from '@/cn';
+import { Tools } from './Tools';
+import { MoveIcon } from './icons/move-icon';
+import { CircleIcon } from './icons/circle-icon';
+import { EraserIcon } from './icons/eraser-icon';
+import { LineIcon } from './icons/line-icon';
+import { TriangleIcon } from './icons/triangle-icon';
+import { PencilIcon } from './icons/pencil-icon';
+import { SquareIcon } from './icons/square-icon';
+import { ImageIcon } from './icons/image-icon';
 
 export type Layer = {
   id: string;
@@ -57,7 +64,7 @@ type RenderParams = {
   scale: number;
   translatePos: Position;
   layers: Layer[];
-  activeTool: ToolType;
+  activeTool: string;
   brushSize: number;
   brushColour: string;
   mousePos: Position;
@@ -80,7 +87,7 @@ type RenderUIParams = {
   translatePos: Position;
   scale: number;
   layers: Layer[];
-  activeTool: ToolType;
+  activeTool: string;
   brushSize: number;
   brushColour: string;
   mousePos: Position;
@@ -397,17 +404,19 @@ const Dropzone = ({ children, hoverChildren, onImageDrop }: DropzoneProps) => {
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.src = e.target?.result as string;
-      img.onload = () => {
-        onImageDrop(img);
+    const files = e.dataTransfer.files ?? [];
+    for (const file of files) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target?.result as string;
+        img.onload = () => {
+          // Clear selection
+          onImageDrop(img);
+        };
       };
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -467,13 +476,14 @@ const MetadataPanel = ({ layers, selectedLayer, metadataRef }: MetadataPanelProp
 };
 
 type RenderMenuProps = {
+  showDebug: boolean;
   layers: Layer[];
   selectedLayer: string | null;
   onLayerUpdate: (layer: Layer) => void;
   selectedItemsRef: React.MutableRefObject<Set<string>>;
 };
 
-const RenderMenu = ({ layers, selectedLayer, onLayerUpdate, selectedItemsRef }: RenderMenuProps) => {
+const RenderMenu = ({ showDebug, layers, selectedLayer, onLayerUpdate, selectedItemsRef }: RenderMenuProps) => {
   const onSaveImage = () => {
     const canvas = document.createElement('canvas');
     canvas.width = 1920;
@@ -487,7 +497,7 @@ const RenderMenu = ({ layers, selectedLayer, onLayerUpdate, selectedItemsRef }: 
         scale: 1,
         translatePos: { x: 0, y: 0 },
         layers,
-        activeTool: 'select',
+        activeTool: 'move',
         brushSize: 1,
         brushColour: 'black',
         mousePos: { x: 0, y: 0 },
@@ -550,13 +560,15 @@ const RenderMenu = ({ layers, selectedLayer, onLayerUpdate, selectedItemsRef }: 
   };
 
   return (
-    <div className="fixed top-1 right-1 z-10 flex flex-col gap-1 max-w-96 bg-black p-2">
+    <div className="fixed top-1 right-1 z-40 flex flex-col gap-1 max-w-96 bg-black p-2">
       <Button onClick={onSaveImage} className="w-full">
         Save image
       </Button>
-      <Button onClick={onAddRandomItems} className="w-full">
-        Add random items
-      </Button>
+      {showDebug && (
+        <Button onClick={onAddRandomItems} className="w-full">
+          Add random items
+        </Button>
+      )}
       <MetadataPanel metadataRef={selectedItemsRef} layers={layers} selectedLayer={selectedLayer} />
     </div>
   );
@@ -627,14 +639,17 @@ const createNewItem = ({ type, x, y, colour }: CreateNewItemParams) => {
     });
 };
 
+// For some stupid reason the body gets focused when the canvas is focused
+const isCanvasInFocus = () => document.activeElement?.tagName === 'BODY';
+
 export const ShowcaseStudio = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const scaleRef = useCanvasZooming(canvasRef);
+  const scaleRef = useCanvasZooming();
   const translatePosRef = useCanvasPanning(canvasRef);
 
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayer, setSelectedLayer] = useState<string | null>(null);
-  const [activeTool, setActiveTool] = useState<ToolsTypes>('select');
+  const [activeTool, setActiveTool] = useState<string>('move');
   const [brushSize, setBrushSize] = useState(10);
   const [brushColour, setBrushColour] = useState('#000000');
   const [shape, setShape] = useState<'rectangle' | 'circle' | 'triangle' | 'line'>('rectangle');
@@ -697,8 +712,8 @@ export const ShowcaseStudio = () => {
   // Press ctrl+s and save the canvas as an image
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      // Check if canvas is focused
-      if (document.activeElement !== canvasRef.current) return;
+      // If the canvas isnt focused ignore the event
+      if (!isCanvasInFocus()) return;
 
       if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -716,8 +731,8 @@ export const ShowcaseStudio = () => {
   // Press ctrl+a and select all items
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      // Check if canvas is focused
-      if (document.activeElement !== canvasRef.current) return;
+      // If the canvas isnt focused ignore the event
+      if (!isCanvasInFocus()) return;
 
       if (e.key === 'a' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -736,8 +751,8 @@ export const ShowcaseStudio = () => {
   // Press delete key and remove all selected items
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      // Check if canvas is focused
-      if (document.activeElement !== canvasRef.current) return;
+      // If the canvas isnt focused ignore the event
+      if (!isCanvasInFocus()) return;
 
       if (e.key === 'Backspace' || e.key === 'Delete') {
         e.preventDefault();
@@ -762,8 +777,8 @@ export const ShowcaseStudio = () => {
   // Press c when an item is selected to center it on the viewport
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      // Check if canvas is focused
-      if (document.activeElement !== canvasRef.current) return;
+      // If the canvas isnt focused ignore the event
+      if (!isCanvasInFocus()) return;
 
       if (e.key === 'c') {
         e.preventDefault();
@@ -861,7 +876,7 @@ export const ShowcaseStudio = () => {
     setLayers(layers);
   };
 
-  const onToolChange = (tool: ToolType) => {
+  const onToolChange = (tool: string) => {
     setActiveTool(tool);
   };
 
@@ -872,34 +887,6 @@ export const ShowcaseStudio = () => {
     // Transform mouse coordinates to canvas space
     const mouseX = e.nativeEvent.offsetX / scaleRef.current - translatePosRef.current.x / scaleRef.current;
     const mouseY = e.nativeEvent.offsetY / scaleRef.current - translatePosRef.current.y / scaleRef.current;
-
-    if (activeTool === 'select') {
-      const layer = layers.find((layer) => layer.id === selectedLayer);
-      if (!layer) return;
-
-      const item = layer.items.find((item) =>
-        item.isWithinPosition({
-          x: mouseX,
-          y: mouseY,
-          width: 0,
-          height: 0,
-        }),
-      );
-      if (item) {
-        isDraggingRef.current = true;
-
-        // If the ctrl key is pressed we should add the item to the selection
-        // Otherwise set it as the only selected item
-        if (e.metaKey || e.ctrlKey) {
-          selectedItemsRef.current.add(item.id);
-        } else {
-          selectedItemsRef.current.clear();
-          selectedItemsRef.current.add(item.id);
-        }
-      } else {
-        selectedItemsRef.current.clear();
-      }
-    }
 
     // Erase or draw
     if (activeTool === 'erase' || activeTool === 'brush') {
@@ -1152,27 +1139,14 @@ export const ShowcaseStudio = () => {
     // Shape
     if (activeTool === 'shape') {
       isDraggingRef.current = false;
+
+      // Switch to the move tool
+      setActiveTool('move');
     }
   };
 
   const onMouseLeave = () => {
     isDraggingRef.current = false;
-  };
-
-  const onBrushSizeChange = (size: number) => {
-    setBrushSize(size);
-  };
-
-  const onBrushColourChange = (colour: string) => {
-    setBrushColour(colour);
-  };
-
-  const onShapeChange = (shape: 'rectangle' | 'circle' | 'triangle' | 'line') => {
-    setShape(shape);
-  };
-
-  const onShapeColourChange = (colour: string) => {
-    setShapeColour(colour);
   };
 
   const commands = [
@@ -1217,28 +1191,6 @@ export const ShowcaseStudio = () => {
       description: 'Delete the selected layer',
       action: () => {
         onLayerDelete(selectedLayer);
-      },
-    },
-    {
-      name: 'Select tool',
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          className="w-4 h-4 fill-black dark:fill-white"
-        >
-          <path
-            fill="currentColor"
-            fillRule="evenodd"
-            d="M3.357 3.234a1 1 0 011.103-.122l16.325 8.455a1 1 0 01-.148 1.838l-6.854 2.254-3.41 6.359a1 1 0 01-1.836-.174L3.046 4.3a1 1 0 01.311-1.065zm2.314 2.758l4.064 12.983 2.474-4.614a1 1 0 01.57-.478l4.973-1.635-12.08-6.256z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-      description: 'Select the select tool',
-      action: () => {
-        onToolChange('select');
       },
     },
     {
@@ -1334,17 +1286,187 @@ export const ShowcaseStudio = () => {
     },
   ];
 
+  const onImageDrop = (image: HTMLImageElement) => {
+    const item = new Item({
+      id: crypto.randomUUID(),
+      x: mousePositionRef.current.x - image.width / 2,
+      y: mousePositionRef.current.y - image.height / 2,
+      width: image.width,
+      height: image.height,
+      rotation: 0,
+      zIndex: 0,
+      canvas: null,
+      image,
+      effects: [],
+    });
+
+    // Add the new item to the layer
+    layers[layers.findIndex((layer) => layer.id === selectedLayer)].items.push(item);
+
+    // Mark the item as selected
+    selectedItemsRef.current.add(item.id);
+
+    // Switch to the move tool
+    setActiveTool('move');
+  };
+
+  const tools = [
+    {
+      name: 'move',
+      icon: <MoveIcon />,
+      description: 'Select the move tool',
+      shortcut: '1',
+      isActive: activeTool === 'move',
+      onClick() {
+        setActiveTool('move');
+      },
+    },
+    {
+      name: 'brush',
+      icon: <PencilIcon />,
+      description: 'Select the draw tool',
+      shortcut: '2',
+      isActive: activeTool === 'brush',
+      onClick() {
+        setActiveTool('brush');
+      },
+    },
+    // @TODO: Implement erase tool
+    // {
+    //   name: 'erase',
+    //   icon: <EraserIcon />,
+    //   description: 'Select the erase tool',
+    //   shortcut: '3',
+    //   isActive: activeTool === 'erase',
+    //   onClick() {
+    //     setActiveTool('erase');
+    //   },
+    // },
+    {
+      name: 'rectangle',
+      icon: <SquareIcon />,
+      description: 'Select the rectangle tool',
+      shortcut: '4',
+      isActive: activeTool === 'shape' && shape === 'rectangle',
+      onClick() {
+        setActiveTool('shape');
+        setShape('rectangle');
+      },
+    },
+    {
+      name: 'circle',
+      icon: <CircleIcon />,
+      description: 'Select the circle tool',
+      shortcut: '5',
+      isActive: activeTool === 'shape' && shape === 'circle',
+      onClick() {
+        setActiveTool('shape');
+        setShape('circle');
+      },
+    },
+    // @TODO: Implement triangle and line tools
+    // {
+    //   name: 'triangle',
+    //   icon: <TriangleIcon />,
+    //   description: 'Select the triangle tool',
+    //   shortcut: '6',
+    //   isActive: activeTool === 'shape' && shape === 'triangle',
+    //   onClick() {
+    //     setActiveTool('shape');
+    //     setShape('triangle');
+    //   },
+    // },
+    // {
+    //   name: 'line',
+    //   icon: <LineIcon />,
+    //   description: 'Select the line tool',
+    //   shortcut: '7',
+    //   isActive: activeTool === 'shape' && shape === 'line',
+    //   onClick() {
+    //     setActiveTool('shape');
+    //     setShape('line');
+    //   },
+    // },
+    {
+      name: 'image',
+      icon: <ImageIcon />,
+      description: 'Select the image tool',
+      shortcut: '8',
+      isActive: activeTool === 'image',
+      onClick() {
+        // Clear the selected items
+        selectedItemsRef.current.clear();
+
+        // Open file picker
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.accept = 'image/*';
+
+        // If the user selects an image, add it to the canvas
+        input.onchange = (inputEvent) => {
+          const files = (inputEvent.target as HTMLInputElement).files ?? [];
+          if (files.length === 0) return;
+
+          // Add each image to the canvas
+          for (const file of files) {
+            const fileIndex = [...files].indexOf(file);
+            const reader = new FileReader();
+            reader.onload = (fileReaderEvent) => {
+              const image = new Image();
+              image.src = fileReaderEvent.target?.result as string;
+              image.onload = () => {
+                const item = new Item({
+                  id: crypto.randomUUID(),
+                  // Offset the image a little from each other using the index
+                  x: mousePositionRef.current.x - image.width / 2 + fileIndex * 10,
+                  y: mousePositionRef.current.y - image.height / 2 + fileIndex * 10,
+                  width: image.width,
+                  height: image.height,
+                  rotation: 0,
+                  zIndex: 0,
+                  canvas: null,
+                  image,
+                  effects: [],
+                });
+
+                // Add the new item to the layer
+                layers[layers.findIndex((layer) => layer.id === selectedLayer)].items.push(item);
+
+                // Mark the item as selected
+                selectedItemsRef.current.add(item.id);
+
+                // Remove the input from the DOM
+                input.remove();
+
+                // Switch to the move tool
+                setActiveTool('move');
+              };
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+
+        // Trigger the file picker
+        input.click();
+      },
+    },
+  ];
+
   // Render canvas on the client
   return (
     <>
-      <RenderMenu
-        layers={layers}
-        selectedLayer={selectedLayer}
-        onLayerUpdate={onLayerUpdate}
-        selectedItemsRef={selectedItemsRef}
-      />
+      {layers.length >= 1 && (
+        <RenderMenu
+          showDebug={showDebug}
+          layers={layers}
+          selectedLayer={selectedLayer}
+          onLayerUpdate={onLayerUpdate}
+          selectedItemsRef={selectedItemsRef}
+        />
+      )}
       <CommandMenu commands={commands} />
-      <FPSStats />
+      {showDebug && <FPSStats />}
       <Dropzone
         hoverChildren={
           // Show the image as a preview when dragging
@@ -1352,29 +1474,7 @@ export const ShowcaseStudio = () => {
             <p>Drop the image here</p>
           </div>
         }
-        onImageDrop={(image) => {
-          const layer = layers.find((layer) => layer.id === selectedLayer);
-          if (!layer) return;
-
-          const item = new Item({
-            id: crypto.randomUUID(),
-            x: mousePositionRef.current.x - image.width / 2,
-            y: mousePositionRef.current.y - image.height / 2,
-            width: image.width,
-            height: image.height,
-            rotation: 0,
-            zIndex: 0,
-            canvas: null,
-            image,
-            effects: [],
-          });
-          onLayerUpdate({
-            ...layer,
-            items: [...layer.items, item],
-          });
-          selectedItemsRef.current.clear();
-          selectedItemsRef.current.add(item.id);
-        }}
+        onImageDrop={onImageDrop}
       >
         <Canvas
           canvasRef={canvasRef}
@@ -1384,21 +1484,16 @@ export const ShowcaseStudio = () => {
           onMouseLeave={onMouseLeave}
         />
       </Dropzone>
-      <Tools
-        className="z-10"
-        activeTool={activeTool}
-        onToolChange={(tool) => {
-          onToolChange(tool);
-        }}
-        brushSize={brushSize}
-        onBrushSizeChange={onBrushSizeChange}
-        brushColour={brushColour}
-        onBrushColourChange={onBrushColourChange}
-        shape={shape}
-        onShapeChange={onShapeChange}
-        shapeColour={shapeColour}
-        onShapeColourChange={onShapeColourChange}
-      />
+      {layers.length >= 1 && (
+        <Tools
+          className="z-10"
+          tools={tools}
+          activeTool={activeTool}
+          onToolChange={(tool) => {
+            onToolChange(tool);
+          }}
+        />
+      )}
       <Layers
         className="z-10"
         layers={layers}
@@ -1413,7 +1508,75 @@ export const ShowcaseStudio = () => {
   );
 };
 
-const useCanvasZooming = (canvasRef: React.RefObject<HTMLCanvasElement>) => {
+const useCanvasZooming = () => {
   const scaleRef = useRef(1);
+
+  // If im using a mouse wheel allow me to zoom in and out while holding ctrl
+  // If im using a trackpad allow me to zoom in and out via pinch to zoom
+  // If im using a touch screen allow me to zoom in and out via pinch to zoom
+
+  // Zoom in and out using the mouse wheel
+  useEffect(() => {
+    const onWheel = (e: WheelEvent) => {
+      // If the canvas isnt focused ignore the event
+      if (!isCanvasInFocus()) return;
+
+      // If the user is holding ctrl allow them to zoom in and out
+      if (e.ctrlKey) {
+        e.preventDefault();
+
+        // Get the current scale
+        const scale = scaleRef.current;
+
+        // Calculate the new scale
+        const newScale = scale - e.deltaY * 0.01;
+
+        // Clamp the scale
+        scaleRef.current = Math.min(Math.max(newScale, 0.1), 10);
+      }
+    };
+    window.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+    };
+  }, []);
+
+  // Zoom in and out using pinch to zoom
+  useEffect(() => {
+    const onTouchStart = (e: TouchEvent) => {
+      // If the canvas isnt focused ignore the event
+      if (!isCanvasInFocus()) return;
+
+      if (e.touches.length === 2) {
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const distance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+        const initialScale = scaleRef.current;
+
+        const onTouchMove = (e: TouchEvent) => {
+          if (e.touches.length === 2) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const newDistance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+            const newScale = initialScale - (distance - newDistance) * 0.01;
+            scaleRef.current = Math.min(Math.max(newScale, 0.1), 10);
+          }
+        };
+
+        const onTouchEnd = () => {
+          window.removeEventListener('touchmove', onTouchMove);
+          window.removeEventListener('touchend', onTouchEnd);
+        };
+
+        window.addEventListener('touchmove', onTouchMove);
+        window.addEventListener('touchend', onTouchEnd);
+      }
+    };
+    window.addEventListener('touchstart', onTouchStart);
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+    };
+  }, []);
+
   return scaleRef;
 };

@@ -1,118 +1,104 @@
 'use client';
 import { Button } from './button';
-import { SlideyBoi } from './slidey-boi';
 import { cn } from '@/cn';
-import { PickyPal } from './picky-pal';
 
-export const toolTypes = ['select', 'move', 'brush', 'erase', 'shape'] as const;
-export type ToolsTypes = (typeof toolTypes)[number];
-export type ToolType = ToolsTypes;
+type Tool = {
+  /**
+   * Name of the tool
+   */
+  name: string;
+  /**
+   * Icon for the tool
+   */
+  icon: React.ReactNode;
+  /**
+   * Function to call when the tool is clicked
+   */
+  onClick: () => void;
+  /**
+   * Description of the tool
+   */
+  description?: string;
+  /*
+   * Keyboard shortcut for the tool
+   */
+  shortcut?: string;
+  /**
+   * Whether the tool is active
+   */
+  isActive?: boolean;
+  /**
+   * Properties panel for the tool
+   */
+  properties?: React.ReactNode;
+};
+
+type MenuBarProps<Tools extends Tool[]> = {
+  tools: Tools;
+  activeTool: string;
+  onToolChange: (tool: string) => void;
+};
+
+const MenuBar = <Tools extends Tool[]>({ tools, activeTool, onToolChange }: MenuBarProps<Tools>) => {
+  return (
+    <div className="absolute md:top-1 flex justify-center w-full">
+      <div className="relative flex flex-row gap-2 w-full md:w-fit overflow-x-scroll justify-center bg-white dark:bg-[#181818] border border-[#14141414] md:rounded p-2">
+        {tools.map((tool) => (
+          <Button
+            key={tool.name}
+            onClick={() => {
+              // Update the active tool
+              onToolChange(tool.name);
+
+              // Call the tool's onClick function
+              tool.onClick();
+            }}
+            active={tool.isActive}
+            className="relative rounded"
+          >
+            <div className="p-2">
+              {tool.icon}
+              {tool.shortcut !== undefined && <sub className="bottom-2 right-2 text-[10px] absolute">{tool.shortcut}</sub>}
+            </div>
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+type ToolPropertiesProps = {
+  tools: Tool[];
+  activeTool: string;
+};
+
+const ToolProperties = ({ tools, activeTool }: ToolPropertiesProps) => {
+  const tool = tools.find((tool) => tool.name === activeTool);
+  if (!tool || !tool.properties) return null;
+
+  return (
+    <div className="absolute left-1 top-1/2 transform -translate-y-1/2 w-[250px]">
+      <div className="relative flex flex-row gap-2 w-fit bg-white dark:bg-[#181818] border border-[#14141414] rounded p-2">
+        {tool.properties}
+      </div>
+    </div>
+  );
+};
 
 type ToolsProps = {
   className?: string;
-
-  activeTool: ToolType;
-  onToolChange: (tool: ToolType) => void;
-
-  brushSize: number;
-  onBrushSizeChange: (size: number) => void;
-
-  brushColour: string;
-  onBrushColourChange: (colour: string) => void;
-
-  shape: 'rectangle' | 'circle' | 'triangle' | 'line';
-  onShapeChange: (shape: 'rectangle' | 'circle' | 'triangle' | 'line') => void;
-
-  shapeColour: string;
-  onShapeColourChange: (colour: string) => void;
+  tools: Tool[];
+  activeTool: string;
+  onToolChange: (tool: string) => void;
 };
 
-export const Tools = ({
-  className,
-  activeTool,
-  onToolChange,
-  brushSize,
-  onBrushSizeChange,
-  brushColour,
-  onBrushColourChange,
-  shape,
-  onShapeChange,
-  shapeColour,
-  onShapeColourChange,
-}: ToolsProps) => {
+export const Tools = ({ className, tools, activeTool, onToolChange }: ToolsProps) => {
   return (
-    <div className={cn('absolute top-1 flex justify-center w-full', className)}>
-      <div className="relative flex flex-col gap-2 w-fit  bg-white dark:bg-[#181818] border border-[#14141414] rounded p-2">
-        {(activeTool === 'brush' || activeTool === 'erase') && (
-          <div className="flex flex-col gap-2">
-            <SlideyBoi
-              label="Brush Size"
-              type="range"
-              min={1}
-              max={200}
-              value={brushSize}
-              onChange={(e) => {
-                onBrushSizeChange(Number(e.target.value));
-              }}
-            />
-            <div className="flex justify-between gap-2">
-              <label htmlFor="background-colour">Brush Colour</label>
-              <input
-                id="brush-colour"
-                type="color"
-                value={brushColour}
-                onChange={(event) => onBrushColourChange(event.target.value)}
-                className="border border-gray-200 rounded-md"
-              />
-            </div>
-          </div>
-        )}
-        {activeTool === 'shape' && (
-          <div className="flex flex-col gap-2">
-            <PickyPal
-              id="shape-selector"
-              label="Shape"
-              value={shape}
-              onChange={(event) => onShapeChange(event.target.value as 'rectangle' | 'circle' | 'triangle' | 'line')}
-              options={[
-                {
-                  key: 'rectangle',
-                  value: 'rectangle',
-                },
-                {
-                  key: 'circle',
-                  value: 'circle',
-                },
-                {
-                  key: 'triangle',
-                  value: 'triangle',
-                },
-                {
-                  key: 'line',
-                  value: 'line',
-                },
-              ]}
-            />
-            <div className="flex justify-between gap-2">
-              <label htmlFor="shape-colour">Shape Colour</label>
-              <input
-                id="shape-colour"
-                type="color"
-                value={shapeColour}
-                onChange={(event) => onShapeColourChange(event.target.value)}
-                className="border border-gray-200 rounded-md"
-              />
-            </div>
-          </div>
-        )}
-        <div className="flex flex-row gap-2">
-          {toolTypes.map((tool) => (
-            <Button key={tool} onClick={() => onToolChange(tool)} active={activeTool === tool}>
-              {tool}
-            </Button>
-          ))}
-        </div>
-      </div>
+    <div className={cn(className)}>
+      {/* Menu bar */}
+      <MenuBar tools={tools} activeTool={activeTool} onToolChange={onToolChange} />
+      {/* Tool properties */}
+      <ToolProperties tools={tools} activeTool={activeTool} />
     </div>
   );
 };

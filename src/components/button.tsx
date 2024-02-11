@@ -18,10 +18,8 @@ export const Button = ({ active, className, ...props }: ButtonProps) => {
         disabledStyles,
         lightStyles,
         darkStyles,
-        {
-          'bg-[#f1f1f3] border-[#e4e4e7]': active,
-          'dark:bg-[#222327] dark:border-[#111214]': active,
-        },
+        active && 'bg-[#f1f1f3] border-[#e4e4e7]',
+        active && 'dark:bg-[#222327] dark:border-[#111214]',
         className,
       )}
       {...props}

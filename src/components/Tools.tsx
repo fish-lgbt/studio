@@ -56,6 +56,7 @@ const MenuBar = <Tools extends Tool[]>({ tools, activeTool, onToolChange }: Menu
               tool.onClick();
             }}
             onMouseOver={() => setHoveredTool(tool.name)}
+            onMouseOut={() => setHoveredTool(null)}
             active={tool.isActive}
             className="relative rounded"
           >

@@ -40,8 +40,7 @@ Contributions to Studio are highly encouraged! Whether you're contributing code,
 
 Studio features a comprehensive and organized codebase, showcasing a broad spectrum of functionalities:
 
-```
-arduinoCopy code
+```bash
 src/
 ├─ app/
 │  ├─ layout.tsx

@@ -11,18 +11,28 @@ body:
       options:
         - label: I have searched the "open" and "closed" issues and confirmed this is not a duplicate.
           required: true
+  - type: checkboxes
+    id: environment
+    attributes:
+      label: Have you validated this issue on the beta/staging or live dev site?
+      description: Please confirm that the issue exists on our beta/staging or live running dev site to help us accurately pinpoint the problem.
+      options:
+        - label: Yes, I have confirmed this issue exists on the beta/staging or live dev site.
+          required: true
+        - label: No, I have not confirmed this issue on the beta/staging or live dev site.
+          required: false
   - type: input
     attributes:
       label: Where did you encounter the bug?
       description: Please specify if it was in a local development environment or in a production environment.
     validations:
       required: true
-  - type: input
+  - type: markdown
     attributes:
-      label: Version of Studio
-      description: You can usually find this in the application's footer. Example format: "v1.2.3".
-    validations:
-      required: true
+      label: Version of Studio (Placeholder)
+      description: The functionality to display the Studio version in the application is currently under development. Please specify any version details if known or applicable.
+      validations:
+        required: false
   - type: textarea
     id: description
     attributes:
@@ -37,12 +47,10 @@ body:
       description: Provide a step-by-step rundown of how to reproduce the issue you're experiencing.
       value: |
         Please follow the format below to help us understand how to reproduce the bug:
-
         1. Go to '...'
         2. Click on '....'
         3. Scroll down to '....'
         4. See error
-
         If you're unsure of the exact steps, include any relevant information that could help us replicate the issue.
     validations:
       required: true

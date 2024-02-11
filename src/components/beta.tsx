@@ -31,6 +31,7 @@ import { SquareIcon } from './icons/square-icon';
 import { ImageIcon } from './icons/image-icon';
 import { TextIcon } from './icons/text-icon';
 import { Drawing } from './items/drawing';
+import { Image } from './items/image';
 
 export type Layer = {
   id: string;
@@ -410,7 +411,7 @@ const Dropzone = ({ children, hoverChildren, onImageDrop }: DropzoneProps) => {
     for (const file of files) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const img = new Image();
+        const img = new globalThis.Image();
         img.src = e.target?.result as string;
         img.onload = () => {
           // Clear selection
@@ -1112,6 +1113,9 @@ export const ShowcaseStudio = () => {
         effects: [],
       });
 
+      // Clear the drawing points
+      drawingPointsRef.current = [];
+
       // Add the new item to the layer
       setLayers((prev) => {
         // Clone the array to avoid mutating the previous state directly
@@ -1128,9 +1132,6 @@ export const ShowcaseStudio = () => {
 
         return newLayers;
       });
-
-      // Clear the drawing points
-      drawingPointsRef.current = [];
     }
 
     // Move
@@ -1289,7 +1290,7 @@ export const ShowcaseStudio = () => {
   ];
 
   const onImageDrop = (image: HTMLImageElement) => {
-    const item = new Item({
+    const item = new Image({
       id: crypto.randomUUID(),
       x: mousePositionRef.current.x - image.width / 2,
       y: mousePositionRef.current.y - image.height / 2,
@@ -1335,17 +1336,15 @@ export const ShowcaseStudio = () => {
       },
       properties() {
         return (
-          <div className="flex items-center justify-center space-x-4">
-            <div>
-              <span>Colour</span>
-              <input
-                type="color"
-                value={shapeColour}
-                onChange={(e) => {
-                  setShapeColour(e.target.value);
-                }}
-              />
-            </div>
+          <div className="flex flex-row justify-between gap-2">
+            <span>Colour</span>
+            <input
+              type="color"
+              value={shapeColour}
+              onChange={(e) => {
+                setShapeColour(e.target.value);
+              }}
+            />
           </div>
         );
       },
@@ -1372,6 +1371,20 @@ export const ShowcaseStudio = () => {
         setActiveTool('shape');
         setShape('circle');
       },
+      properties() {
+        return (
+          <div className="flex flex-row justify-between gap-2">
+            <span>Colour</span>
+            <input
+              type="color"
+              value={shapeColour}
+              onChange={(e) => {
+                setShapeColour(e.target.value);
+              }}
+            />
+          </div>
+        );
+      },
     },
     // {
     //   name: 'line',
@@ -1392,6 +1405,20 @@ export const ShowcaseStudio = () => {
       isActive: activeTool === 'brush',
       onClick() {
         setActiveTool('brush');
+      },
+      properties() {
+        return (
+          <div className="flex flex-row justify-between gap-2">
+            <span>Colour</span>
+            <input
+              type="color"
+              value={brushColour}
+              onChange={(e) => {
+                setBrushColour(e.target.value);
+              }}
+            />
+          </div>
+        );
       },
     },
     // {
@@ -1430,10 +1457,10 @@ export const ShowcaseStudio = () => {
             const fileIndex = [...files].indexOf(file);
             const reader = new FileReader();
             reader.onload = (fileReaderEvent) => {
-              const image = new Image();
+              const image = new globalThis.Image();
               image.src = fileReaderEvent.target?.result as string;
               image.onload = () => {
-                const item = new Item({
+                const item = new Image({
                   id: crypto.randomUUID(),
                   // Offset the image a little from each other using the index
                   x: mousePositionRef.current.x - image.width / 2 + fileIndex * 10,

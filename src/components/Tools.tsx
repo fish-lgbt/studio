@@ -80,11 +80,10 @@ const MenuBar = <Tools extends Tool[]>({ tools, activeTool, onToolChange }: Menu
 
 type ToolPropertiesProps = {
   tools: Tool[];
-  activeTool: string;
 };
 
-const ToolProperties = ({ tools, activeTool }: ToolPropertiesProps) => {
-  const tool = tools.find((tool) => tool.name === activeTool);
+const ToolProperties = ({ tools }: ToolPropertiesProps) => {
+  const tool = tools.find((tool) => tool.isActive);
   if (!tool || !tool.properties) return null;
 
   return (

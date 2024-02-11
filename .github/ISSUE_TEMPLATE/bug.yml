@@ -1,0 +1,60 @@
+name: 🐛 Bug Report
+description: Report an issue to help improve Studio.
+title: "[BUG] <description>"
+labels: ["bug", "status: awaiting triage"]
+body:
+  - type: checkboxes
+    id: duplicates
+    attributes:
+      label: Have you checked if this bug has already been reported?
+      description: Please check both "open" AND "closed" issues to ensure your bug has not already been reported.
+      options:
+        - label: I have searched the "open" and "closed" issues and confirmed this is not a duplicate.
+          required: true
+  - type: input
+    attributes:
+      label: Where did you encounter the bug?
+      description: Please specify if it was in a local development environment or in a production environment.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Version of Studio
+      description: You can usually find this in the application's footer. Example format: "v1.2.3".
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Detailed Bug Description
+      description: Provide a clear and concise description of what the bug is, including any relevant information or steps to reproduce.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce the Bug
+      description: Provide a step-by-step rundown of how to reproduce the issue you're experiencing.
+      value: |
+        Please follow the format below to help us understand how to reproduce the bug:
+
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+
+        If you're unsure of the exact steps, include any relevant information that could help us replicate the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots (If Applicable)
+      description: Screenshots can help us better understand the issue. Please upload any relevant images.
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        **Thank you for contributing to Studio!** 🌟
+        Your report helps us improve and make Studio better for everyone.

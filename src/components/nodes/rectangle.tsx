@@ -1,8 +1,8 @@
-import { Item, ItemParams } from '../item';
+import { Node, NodeParams } from '../node';
 
-type RectangleParams = ItemParams;
+type RectangleParams = NodeParams;
 
-export class Rectangle extends Item {
+export class Rectangle extends Node {
   public readonly type: string = 'rectangle';
 
   constructor(params: RectangleParams) {
@@ -13,7 +13,7 @@ export class Rectangle extends Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.rotation * Math.PI) / 180);

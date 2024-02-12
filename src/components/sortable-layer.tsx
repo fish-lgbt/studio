@@ -1,8 +1,8 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { LayerBar } from './LayerBar';
-import { Layer } from './beta';
+import { LayerBar } from './layer-bar';
+import { Layer } from './studio';
 
 type SortableLayerProps = {
   id: string;
@@ -12,6 +12,7 @@ type SortableLayerProps = {
   onLayerUpdate: (layer: Layer) => void;
   onLayerDelete: (id: string | null) => void;
 };
+
 export const SortableLayer = ({
   id,
   layer,

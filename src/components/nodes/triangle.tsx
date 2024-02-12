@@ -1,9 +1,9 @@
 import { Position } from '@/common/position';
-import { Item, ItemParams } from '../item';
+import { Node, NodeParams } from '../node';
 
-export type TriangleParams = ItemParams;
+export type TriangleParams = NodeParams;
 
-export class Triangle extends Item {
+export class Triangle extends Node {
   public readonly type: string = 'triangle';
 
   constructor(params: TriangleParams) {
@@ -14,7 +14,7 @@ export class Triangle extends Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.rotation * Math.PI) / 180);
@@ -36,7 +36,7 @@ export class Triangle extends Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.rotation * Math.PI) / 180);
@@ -59,7 +59,7 @@ export class Triangle extends Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
 

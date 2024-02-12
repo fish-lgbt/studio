@@ -1,7 +1,7 @@
-import { ItemParams } from '../item';
+import { NodeParams } from '../node';
 import { UIElement } from './ui-element';
 
-type UIMetadataParams = ItemParams;
+type UIMetadataParams = NodeParams;
 
 export class UIMetadata extends UIElement {
   #metadata: Record<string, unknown> = {};
@@ -14,7 +14,7 @@ export class UIMetadata extends UIElement {
     if (!this.#metadata) return;
 
     // Render the metadata
-    // Make sure it fits within the canvas and the item
+    // Make sure it fits within the canvas and the node
     const x = Math.min(Math.max(this.x, 0), ctx.canvas.width - 200);
     const y = Math.min(Math.max(this.y, 0), ctx.canvas.height - 100);
 

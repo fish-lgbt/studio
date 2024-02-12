@@ -1,7 +1,7 @@
-import { Item, ItemParams } from '../item';
+import { Node, NodeParams } from '../node';
 import { UIElement } from './ui-element';
 
-type UIButtonParams = ItemParams & {
+type UIButtonParams = NodeParams & {
   label: string;
 };
 

@@ -1,5 +1,5 @@
 import { Effect } from '../effect';
-import { Item } from '../item';
+import { Node } from '../node';
 
 type GlowParams = {
   colour: string;
@@ -10,21 +10,21 @@ type GlowParams = {
 
 export class Glow extends Effect {
   public readonly stage = 'before' as const;
-  #item: Item | null = null;
+  #node: Node | null = null;
 
   constructor(private options: GlowParams) {
     super();
   }
 
-  setItem(item: Item) {
-    this.#item = item;
+  setNode(node: Node) {
+    this.#node = node;
   }
 
   render(ctx: CanvasRenderingContext2D, translatePos: { x: number; y: number }, scale: number) {
-    // Don't render if there's no item
-    if (!this.#item) return;
+    // Don't render if there's no node
+    if (!this.#node) return;
 
-    const { x, y, rotation } = this.#item;
+    const { x, y, rotation } = this.#node;
 
     // Save the current state of the context
     ctx.save();
@@ -42,8 +42,8 @@ export class Glow extends Effect {
   }
 
   #renderEffect(ctx: CanvasRenderingContext2D) {
-    // Don't render if there's no item
-    if (!this.#item) return;
+    // Don't render if there's no node
+    if (!this.#node) return;
 
     const { colour, blur, offsetX, offsetY } = this.options;
 
@@ -53,7 +53,7 @@ export class Glow extends Effect {
     ctx.shadowOffsetX = offsetX;
     ctx.shadowOffsetY = offsetY;
 
-    // Draw the item
-    ctx.fillRect(0, 0, this.#item.width, this.#item.height);
+    // Draw the node
+    ctx.fillRect(0, 0, this.#node.width, this.#node.height);
   }
 }

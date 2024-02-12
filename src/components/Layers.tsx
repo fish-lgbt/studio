@@ -13,11 +13,11 @@ import {
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
 import { Button } from './button';
-import { PlusIcon } from './PlusIcon';
-import { Layer } from './beta';
-import { SortableLayer } from './SortableLayer';
+import { PlusIcon } from './icons/plus-icon';
+import { Layer } from './studio';
+import { SortableLayer } from './sortable-layer';
 import { cn } from '@/cn';
-import { TrashCanIcon } from './TrashCanIcon';
+import { TrashCanIcon } from './icons/trash-can-icon';
 
 type LayersProps = {
   layers: Layer[];

@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
 
-const ShowcaseStudio = dynamic(() => import('@/components/beta').then((mod) => ({ default: mod.ShowcaseStudio })), {
+const ShowcaseStudio = dynamic(() => import('@/components/studio').then((mod) => ({ default: mod.Studio })), {
   ssr: false,
 });
 

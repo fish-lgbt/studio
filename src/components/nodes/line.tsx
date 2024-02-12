@@ -1,9 +1,9 @@
 import { Position } from '@/common/position';
-import { Item, ItemParams } from '../item';
+import { Node, NodeParams } from '../node';
 
-type LineParams = ItemParams;
+type LineParams = NodeParams;
 
-export class Line extends Item {
+export class Line extends Node {
   public readonly type: string = 'line';
 
   constructor(params: LineParams) {
@@ -14,7 +14,7 @@ export class Line extends Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.rotation * Math.PI) / 180);
@@ -34,7 +34,7 @@ export class Line extends Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.rotation * Math.PI) / 180);
@@ -54,7 +54,7 @@ export class Line extends Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
 

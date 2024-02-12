@@ -1,6 +1,11 @@
 import { cn } from '@/cn';
 
-export const RotateIcon = ({ rotation, className }: { rotation: number; className?: string }) => (
+type RotateIconProps = {
+  rotation: number;
+  className?: string;
+};
+
+export const RotateIcon = ({ rotation, className }: RotateIconProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"

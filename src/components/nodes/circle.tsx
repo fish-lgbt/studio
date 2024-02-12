@@ -1,9 +1,9 @@
 import { Position } from '@/common/position';
-import { Item, ItemParams } from '../item';
+import { Node, NodeParams } from '../node';
 
-export type CircleParams = ItemParams;
+export type CircleParams = NodeParams;
 
-export class Circle extends Item {
+export class Circle extends Node {
   public readonly type: string = 'circle';
 
   constructor(params: CircleParams) {
@@ -14,7 +14,7 @@ export class Circle extends Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.rotation * Math.PI) / 180);
@@ -39,7 +39,7 @@ export class Circle extends Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.rotation * Math.PI) / 180);
@@ -58,7 +58,7 @@ export class Circle extends Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.rotation * Math.PI) / 180);

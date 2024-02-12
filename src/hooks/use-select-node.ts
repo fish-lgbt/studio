@@ -1,4 +1,4 @@
-import { Item } from '@/components/item';
+import { Node } from '@/components/node';
 import { useEffect, useRef } from 'react';
 
 type Position = {
@@ -22,15 +22,15 @@ const getCoordinates = (event: MouseEvent | TouchEvent, rect: DOMRect, translate
 };
 
 /**
- * This hook is used to seelct an item on a canvas.
- * @param items The items to select from.
+ * This hook is used to seelct an node on a canvas.
+ * @param nodes The nodes to select from.
  * @param translatePos The position of the canvas.
  * @param scale The scale of the canvas.
  * @returns The mouse event handlers.
  */
-export const useSelectItem = (
+export const useSelectNode = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
-  items: Item[],
+  nodes: Node[],
   translatePos: Position,
   scale: number,
 ) => {

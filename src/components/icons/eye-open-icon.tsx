@@ -1,7 +1,16 @@
-'use client';
-export const EyeOpenIcon = () => {
+import { cn } from '@/cn';
+
+type EyeOpenIconProps = {
+  className?: string;
+};
+
+export const EyeOpenIcon = ({ className }: EyeOpenIconProps) => {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 stroke-white dark:stroke-black">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className={cn('w-4 h-4 stroke-white dark:stroke-black', className)}
+    >
       <circle
         r="2"
         fill="none"

@@ -1,8 +1,8 @@
-import { Item, ItemParams } from '../item';
+import { Node, NodeParams } from '../node';
 
-type UIElementParams = ItemParams;
+type UIElementParams = NodeParams;
 
-export class UIElement extends Item {
+export class UIElement extends Node {
   constructor(params: UIElementParams) {
     super(params);
   }
@@ -11,7 +11,7 @@ export class UIElement extends Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.rotation * Math.PI) / 180);

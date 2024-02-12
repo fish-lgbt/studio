@@ -6,9 +6,8 @@ type BackgroundColourPickerProps = {
 };
 
 export const BackgroundColourPicker = ({ backgroundColour, onChangeBackgroundColour }: BackgroundColourPickerProps) => {
-  if (backgroundColour === null) {
-    return null;
-  }
+  if (backgroundColour === null) return null;
+
   return (
     <div className="flex justify-between gap-2">
       <label htmlFor="background-colour">Background Colour</label>

@@ -1,9 +1,7 @@
-'use client';
-
 import { Position } from '@/common/position';
 import { Effect } from './effect';
 
-export type ItemParams = {
+export type NodeParams = {
   id: string;
   width: number;
   height: number;
@@ -18,10 +16,10 @@ export type ItemParams = {
   effects?: Effect[];
 };
 
-const renderedItemCache = new Map<string, HTMLCanvasElement>();
+const renderedNodeCache = new Map<string, HTMLCanvasElement>();
 
-export class Item {
-  public readonly type: string = 'item';
+export class Node {
+  public readonly type: string = 'node';
 
   #id: string;
   #x: number;
@@ -38,7 +36,7 @@ export class Item {
 
   // protected history = history();
 
-  constructor(params: ItemParams) {
+  constructor(params: NodeParams) {
     this.#id = params.id;
     this.#x = params.x ?? 0;
     this.#y = params.y ?? 0;
@@ -50,9 +48,9 @@ export class Item {
     this.#effects = params.effects ?? [];
     this.#zIndex = params.zIndex ?? 0;
 
-    // Set the effect's item to this item
+    // Set the effect's node to this node
     for (const effect of this.#effects) {
-      effect.setItem(this);
+      effect.setNode(this);
     }
 
     if (params.image && typeof params.image === 'string') {
@@ -110,8 +108,8 @@ export class Item {
     this.#erasedPixels.push(position);
   }
 
-  public clone(): Item {
-    return new Item({
+  public clone(): Node {
+    return new Node({
       id: this.#id,
       x: this.#x,
       y: this.#y,
@@ -126,9 +124,9 @@ export class Item {
   }
 
   /**
-   * Move the item by the given amount (relative to its current position)
-   * @param x The amount to move the item on the x-axis
-   * @param y The amount to move the item on the y-axis
+   * Move the node by the given amount (relative to its current position)
+   * @param x The amount to move the node on the x-axis
+   * @param y The amount to move the node on the y-axis
    * @returns void
    */
   public moveBy(x: number, y: number): void {
@@ -137,9 +135,9 @@ export class Item {
   }
 
   /*
-   * Move the item to the given position (absolute position)
-   * @param x The x-coordinate to move the item to
-   * @param y The y-coordinate to move the item to
+   * Move the node to the given position (absolute position)
+   * @param x The x-coordinate to move the node to
+   * @param y The y-coordinate to move the node to
    * @returns void
    */
   public moveTo(x: number, y: number): void {
@@ -169,57 +167,57 @@ export class Item {
   }
 
   public render(ctx: CanvasRenderingContext2D, translatePos: { x: number; y: number }, scale: number): void {
-    if (renderedItemCache.has(this.#id)) {
+    if (renderedNodeCache.has(this.#id)) {
       ctx.drawImage(
-        renderedItemCache.get(this.#id) as HTMLCanvasElement,
+        renderedNodeCache.get(this.#id) as HTMLCanvasElement,
         this.#x + translatePos.x,
         this.#y + translatePos.y,
       );
       return;
     }
 
-    // Create a canvas to render the item to
+    // Create a canvas to render the node to
     const canvas = document.createElement('canvas');
     canvas.width = this.#width;
     canvas.height = this.#height;
 
     // Get the context of the canvas
-    const itemCtx = canvas.getContext('2d');
-    if (!itemCtx) return;
+    const nodeCtx = canvas.getContext('2d');
+    if (!nodeCtx) return;
 
     // Draw the colour
     if (this.#colour) {
-      itemCtx.fillStyle = this.#colour;
-      itemCtx.fillRect(0, 0, this.#width, this.#height);
+      nodeCtx.fillStyle = this.#colour;
+      nodeCtx.fillRect(0, 0, this.#width, this.#height);
     }
 
     // Draw the image
     if (this.#image) {
-      itemCtx.drawImage(this.#image, 0, 0, this.#width, this.#height);
+      nodeCtx.drawImage(this.#image, 0, 0, this.#width, this.#height);
     }
 
     // Draw the canvas
     if (this.#canvas) {
-      itemCtx.drawImage(this.#canvas, 0, 0, this.#width, this.#height);
+      nodeCtx.drawImage(this.#canvas, 0, 0, this.#width, this.#height);
     }
 
     // Clear the erased pixels
     for (const position of this.#erasedPixels) {
-      itemCtx.clearRect(position.x, position.y, 1, 1);
+      nodeCtx.clearRect(position.x, position.y, 1, 1);
     }
 
-    // Cache the rendered item
-    renderedItemCache.set(this.#id, canvas);
+    // Cache the rendered node
+    renderedNodeCache.set(this.#id, canvas);
 
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(this.#x + translatePos.x, this.#y + translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.#rotation * Math.PI) / 180);
 
-    // Draw the item to the context
+    // Draw the node to the context
     ctx.drawImage(canvas, this.#x + translatePos.x, this.#y + translatePos.y);
 
     // Restore the state of the context
@@ -230,7 +228,7 @@ export class Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(this.#x + translatePos.x, this.#y + translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.#rotation * Math.PI) / 180);
@@ -247,7 +245,7 @@ export class Item {
     // Save the current state of the context
     ctx.save();
 
-    // Apply transformations for drawing the item
+    // Apply transformations for drawing the node
     ctx.translate(this.#x + translatePos.x, this.#y + translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.#rotation * Math.PI) / 180);
@@ -260,7 +258,7 @@ export class Item {
     ctx.fillRect(-5, this.#height - 5, 10, 10);
     ctx.fillRect(this.#width - 5, this.#height - 5, 10, 10);
 
-    // Draw the size in a label below the item
+    // Draw the size in a label below the node
     const labelText = `${this.#width}x${this.#height}`;
     const labelSize = ctx.measureText(labelText);
     ctx.fillRect(this.#width / 2 - labelSize.width / 2 - 5, this.#height + 10, labelSize.width + 10, 20);
@@ -275,7 +273,7 @@ export class Item {
   }
 
   public isWithinPosition({ x, y, width, height }: Position & { width: number; height: number }): boolean {
-    // Check if the item is within the given position
+    // Check if the node is within the given position
     // Is is allowed to be partially within the position
     return this.#x + this.#width > x && this.#x < x + width && this.#y + this.#height > y && this.#y < y + height;
   }

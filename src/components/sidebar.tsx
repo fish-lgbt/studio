@@ -14,13 +14,13 @@ export const Sidebar = ({ disabled, groups, name }: SidebarProps) => {
         </div>
         {groups.filter(Boolean).map((group, groupIndex) => {
           if (!group) return null;
-          const items = group.filter(Boolean);
+          const nodes = group.filter(Boolean);
 
           return (
             <div key={`${name}-${groupIndex}`}>
-              {items.map((item, index) => (
+              {nodes.map((node, index) => (
                 <div key={`${name}-${groupIndex}-${index}`} className="p-2 overflow-y-scroll">
-                  {item}
+                  {node}
                 </div>
               ))}
               {groupIndex < groups.filter(Boolean).length - 1 && (

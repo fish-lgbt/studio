@@ -1,5 +1,5 @@
 import { Position } from '@/common/position';
-import { Item } from '@/components/item';
+import { Node } from '@/components/node';
 import { useEffect, useRef } from 'react';
 
 const isMouseEvent = (event: MouseEvent | TouchEvent): event is MouseEvent => {
@@ -18,15 +18,15 @@ const getCoordinates = (event: MouseEvent | TouchEvent, rect: DOMRect, translate
 };
 
 /**
- * This hook is used to move an item on a canvas.
- * @param items The items to move.
+ * This hook is used to move an node on a canvas.
+ * @param nodes The items to move.
  * @param translatePos The position of the canvas.
  * @param scale The scale of the canvas.
  * @returns The mouse event handlers.
  */
-export const useMoveItem = (
+export const useMoveNode = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
-  items: Item[],
+  nodes: Node[],
   translatePos: Position,
   scale: number,
 ) => {

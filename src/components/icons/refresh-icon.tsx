@@ -1,11 +1,17 @@
-export const RefreshIcon = () => (
+import { cn } from '@/cn';
+
+type RefreshIconProps = {
+  className?: string;
+};
+
+export const RefreshIcon = ({ className }: RefreshIconProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="16"
     height="16"
     fill="none"
     viewBox="0 0 24 24"
-    className="stroke-black dark:stroke-white"
+    className={cn('stroke-black dark:stroke-white', className)}
   >
     <path
       stroke="currentColour"

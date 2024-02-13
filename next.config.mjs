@@ -1,4 +1,15 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {};
+import { withAxiom } from 'next-axiom';
 
-export default nextConfig;
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/ingest/:path*',
+        destination: 'https://app.posthog.com/:path*',
+      },
+    ];
+  },
+};
+
+export default withAxiom(nextConfig);

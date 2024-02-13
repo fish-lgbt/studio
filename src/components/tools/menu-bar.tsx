@@ -27,6 +27,7 @@ export const MenuBar = <Tools extends Tool[]>({ tools, activeTool, onToolChange 
             onMouseOut={() => setHoveredTool(null)}
             active={tool.isActive}
             className="relative rounded"
+            id={`${tool.name}-tool-button`}
           >
             <div className="p-2">
               {tool.icon}

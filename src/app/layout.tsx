@@ -1,8 +1,14 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { PHProvider } from './providers';
+import dynamic from 'next/dynamic';
 
 const inter = Inter({ subsets: ['latin'] });
+
+const PostHogPageView = dynamic(() => import('./post-hog-page-view'), {
+  ssr: false,
+});
 
 export const metadata: Metadata = {
   title: 'ShowcaseStudio',
@@ -27,7 +33,12 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <PHProvider>
+        <body className={inter.className}>
+          <PostHogPageView />
+          {children}
+        </body>
+      </PHProvider>
     </html>
   );
 }

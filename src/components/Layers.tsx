@@ -98,6 +98,7 @@ export const Layers = ({
             onLayerCreate();
           }}
           title="Add Layer"
+          id="add-layer-button"
         >
           <PlusIcon />
         </Button>
@@ -107,6 +108,7 @@ export const Layers = ({
             onLayerDelete(selectedLayer);
           }}
           title="Delete Layer"
+          id="delete-layer-button"
         >
           <TrashCanIcon />
         </Button>

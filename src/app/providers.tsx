@@ -2,6 +2,10 @@
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 
-export function PHProvider({ children }: { children: React.ReactNode }) {
+type PHProviderProps = {
+  children: React.ReactNode;
+};
+
+export function PHProvider({ children }: PHProviderProps) {
   return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
 }

@@ -11,7 +11,6 @@ import {
   TouchSensor,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
-
 import { Button } from './button';
 import { PlusIcon } from './icons/plus-icon';
 import { Layer } from './studio';

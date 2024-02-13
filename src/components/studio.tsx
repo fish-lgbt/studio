@@ -8,7 +8,6 @@ import { useResizeWindow } from '@/hooks/use-resize-window';
 import { useEffect, useRef, useState } from 'react';
 import { Position } from '@/common/position';
 import { Node } from './node';
-import { Layers } from './layers';
 import { Point } from '@/common/point';
 import { CommandMenu } from './command-menu';
 import { TrashCanIcon } from './icons/trash-can-icon';
@@ -30,6 +29,7 @@ import { cachedRenderedCanvases } from '@/common/cache';
 import { RenderMenu } from './render-menu';
 import { useCanvasZooming } from '@/hooks/use-canvas-zooming';
 import { isCanvasInFocus } from '@/common/is-canvas-in-focus';
+import { Layers } from './layers';
 
 export type Layer = {
   id: string;

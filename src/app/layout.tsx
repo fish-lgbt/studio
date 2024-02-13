@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 
 const inter = Inter({ subsets: ['latin'] });
 
-const PostHogPageView = dynamic(() => import('./post-hog-page-view'), {
+const PostHogTracking = dynamic(() => import('./post-hog-tracking'), {
   ssr: false,
 });
 
@@ -35,8 +35,7 @@ export default function RootLayout({
       </head>
       <PHProvider>
         <body className={inter.className}>
-          <PostHogPageView />
-          {children}
+          <PostHogTracking>{children}</PostHogTracking>
         </body>
       </PHProvider>
     </html>

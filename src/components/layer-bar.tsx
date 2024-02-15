@@ -5,19 +5,6 @@ import { EyeClosedIcon } from './icons/eye-closed-icon';
 import { EyeOpenIcon } from './icons/eye-open-icon';
 import { Layer } from './studio';
 import { cn } from '@/cn';
-import { Node } from './node';
-import {
-  DndContext,
-  DragEndEvent,
-  KeyboardSensor,
-  MouseSensor,
-  PointerSensor,
-  TouchSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { LockIcon } from './icons/lock-icon';
 import { UnlockIcon } from './icons/unlock-icon';
 import { Nodes } from './nodes';

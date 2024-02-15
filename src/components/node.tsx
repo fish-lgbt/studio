@@ -166,6 +166,42 @@ export class Node {
     this.#canvas = canvas;
   }
 
+  public clearCache() {
+    renderedNodeCache.delete(this.#id);
+  }
+
+  public addEffect(effect: Effect): void {
+    this.#effects.push(effect);
+    effect.setNode(this);
+  }
+
+  /*
+   * Remove the effect from the node
+   */
+  public removeEffect(type: string): void {
+    const index = this.#effects.findIndex((effect) => effect.type !== type);
+    if (index === -1) return;
+
+    // Run the effect's cleanup method
+    this.#effects[index].cleanup();
+
+    // Remove the effect
+    this.#effects.splice(index, 1);
+  }
+
+  /**
+   * Remove the last effect from the node
+   */
+  public removeLastEffect(): void {
+    if (this.#effects.length === 0) return;
+
+    // Run the effect's cleanup method
+    this.#effects[this.#effects.length - 1].cleanup();
+
+    // Remove the last effect
+    this.#effects.pop();
+  }
+
   public render(ctx: CanvasRenderingContext2D, translatePos: { x: number; y: number }, scale: number): void {
     if (renderedNodeCache.has(this.#id)) {
       ctx.drawImage(

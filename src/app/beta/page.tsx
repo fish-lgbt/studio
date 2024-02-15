@@ -3,7 +3,6 @@ import { Button } from '@/components/button';
 import { useConsent } from '@/hooks/use-consent';
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 
 const Studio = dynamic(() => import('@/components/studio').then((mod) => ({ default: mod.Studio })), {
   ssr: false,
@@ -20,7 +19,7 @@ const AccessDeniedToFeature = () => (
 );
 
 export default function Page() {
-  const newUIEnabled = useFeatureFlagEnabled('new-ui');
+  const newUIEnabled = true;
   const consent = useConsent();
 
   // Wait for the feature flag to load

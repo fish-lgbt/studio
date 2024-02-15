@@ -1,3 +1,4 @@
+import { TrackClicks } from '@/app/tracking';
 import { cn } from '@/cn';
 
 type ButtonProps = JSX.IntrinsicElements['button'] & {
@@ -12,17 +13,19 @@ export const Button = ({ active, className, ...props }: ButtonProps) => {
     'dark:bg-[#111214] dark:text-white dark:border-[#222327] hover:dark:bg-[#222327] hover:dark:border-[#111214]';
 
   return (
-    <button
-      className={cn(
-        baseStyles,
-        disabledStyles,
-        lightStyles,
-        darkStyles,
-        active && 'bg-[#f1f1f3] border-[#e4e4e7]',
-        active && 'dark:bg-[#222327] dark:border-[#111214]',
-        className,
-      )}
-      {...props}
-    />
+    <TrackClicks>
+      <button
+        className={cn(
+          baseStyles,
+          disabledStyles,
+          lightStyles,
+          darkStyles,
+          active && 'bg-[#f1f1f3] border-[#e4e4e7]',
+          active && 'dark:bg-[#222327] dark:border-[#111214]',
+          className,
+        )}
+        {...props}
+      />
+    </TrackClicks>
   );
 };

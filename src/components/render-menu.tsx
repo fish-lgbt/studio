@@ -7,6 +7,7 @@ import { Node } from './node';
 import { Glow } from './effects/glow';
 import { Border } from './effects/border';
 import { MetadataPanel } from './metadata-panel';
+import { ControlsPanel } from './controls-panel';
 
 type RenderMenuProps = {
   showDebug: boolean;
@@ -95,14 +96,15 @@ export const RenderMenu = ({ showDebug, layers, selectedLayer, onLayerUpdate, se
   return (
     <div className="fixed top-1 right-1 z-40 flex flex-col gap-1 max-w-96 bg-black p-2">
       <Button onClick={onSaveImage} className="w-full" id="save-image-button">
-        Save image
+        Save canvas
       </Button>
       {showDebug && (
         <Button onClick={onAddRandomNodes} className="w-full">
           Add random nodes
         </Button>
       )}
-      <MetadataPanel metadataRef={selectedNodesRef} layers={layers} selectedLayer={selectedLayer} />
+      <MetadataPanel selectedNodesRef={selectedNodesRef} layers={layers} selectedLayer={selectedLayer} />
+      <ControlsPanel selectedNodesRef={selectedNodesRef} layers={layers} selectedLayer={selectedLayer} />
     </div>
   );
 };

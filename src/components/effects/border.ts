@@ -51,4 +51,8 @@ export class Border extends Effect {
     ctx.strokeStyle = colour;
     ctx.strokeRect(0, 0, width, height);
   }
+
+  cleanup(): void {
+    this.#node = null;
+  }
 }

@@ -56,4 +56,8 @@ export class Glow extends Effect {
     // Draw the node
     ctx.fillRect(0, 0, this.#node.width, this.#node.height);
   }
+
+  cleanup(): void {
+    this.#node = null;
+  }
 }

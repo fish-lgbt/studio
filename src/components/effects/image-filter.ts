@@ -68,7 +68,7 @@ export class ImageFilter extends Effect {
   applyFilter(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
     const filter = filters[this.filter];
     if (filter) {
-      return filter(ctx.getImageData(0, 0, canvas.width, canvas.height), 1);
+      return filter(ctx.getImageData(0, 0, canvas.width, canvas.height));
     }
   }
 

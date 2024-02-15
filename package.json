@@ -19,7 +19,7 @@
     "lodash": "^4.17.21",
     "million": "^3.0.3",
     "next": "14.1.0",
-    "next-axiom": "github:imlunahey/next-axiom",
+    "next-axiom": "github:imlunahey/next-axiom#feat/middleware",
     "react": "^18",
     "react-dom": "^18",
     "react-dropzone": "^14.2.3",

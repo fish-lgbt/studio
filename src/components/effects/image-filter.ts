@@ -7,6 +7,7 @@ import { clarendon } from './image-filters/clarendon';
 import { invert } from './image-filters/invert';
 import { reyes } from './image-filters/reyes';
 import { lofi } from './image-filters/lofi';
+import { flip } from './image-filters/flip';
 
 export const filters = {
   'grey-scale': greyScale,
@@ -16,6 +17,8 @@ export const filters = {
   invert,
   reyes,
   lofi,
+  'flip-horizontal': (imageData: ImageData) => flip(imageData, 'horizontal'),
+  'flip-vertical': (imageData: ImageData) => flip(imageData, 'vertical'),
 };
 
 type Filter = keyof typeof filters;

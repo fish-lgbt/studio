@@ -166,10 +166,6 @@ export class Node {
     this.#canvas = canvas;
   }
 
-  public clearCache() {
-    renderedNodeCache.delete(this.#id);
-  }
-
   public addEffect(effect: Effect): void {
     this.#effects.push(effect);
     effect.setNode(this);
@@ -202,16 +198,7 @@ export class Node {
     this.#effects.pop();
   }
 
-  public render(ctx: CanvasRenderingContext2D, translatePos: { x: number; y: number }, scale: number): void {
-    if (renderedNodeCache.has(this.#id)) {
-      ctx.drawImage(
-        renderedNodeCache.get(this.#id) as HTMLCanvasElement,
-        this.#x + translatePos.x,
-        this.#y + translatePos.y,
-      );
-      return;
-    }
-
+  #renderToCanvas(): HTMLCanvasElement {
     // Create a canvas to render the node to
     const canvas = document.createElement('canvas');
     canvas.width = this.#width;
@@ -219,7 +206,7 @@ export class Node {
 
     // Get the context of the canvas
     const nodeCtx = canvas.getContext('2d');
-    if (!nodeCtx) return;
+    if (!nodeCtx) return canvas;
 
     // Draw the colour
     if (this.#colour) {
@@ -242,19 +229,44 @@ export class Node {
       nodeCtx.clearRect(position.x, position.y, 1, 1);
     }
 
-    // Cache the rendered node
+    return canvas;
+  }
+
+  public clearCache() {
+    renderedNodeCache.delete(this.#id);
+  }
+
+  public redraw() {
+    const canvas = this.#renderToCanvas();
     renderedNodeCache.set(this.#id, canvas);
+  }
+
+  public render(ctx: CanvasRenderingContext2D, translatePos: { x: number; y: number }, scale: number): void {
+    if (renderedNodeCache.has(this.#id)) {
+      ctx.drawImage(
+        renderedNodeCache.get(this.#id) as HTMLCanvasElement,
+        this.#x + translatePos.x,
+        this.#y + translatePos.y,
+      );
+      return;
+    }
 
     // Save the current state of the context
     ctx.save();
 
     // Apply transformations for drawing the node
-    ctx.translate(this.#x + translatePos.x, this.#y + translatePos.y);
+    ctx.translate(translatePos.x, translatePos.y);
     ctx.scale(scale, scale);
     ctx.rotate((this.#rotation * Math.PI) / 180);
 
+    // Draw the node to a canvas
+    const canvas = this.#renderToCanvas();
+
+    // Cache the canvas
+    renderedNodeCache.set(this.#id, canvas);
+
     // Draw the node to the context
-    ctx.drawImage(canvas, this.#x + translatePos.x, this.#y + translatePos.y);
+    ctx.drawImage(canvas, this.#x, this.#y);
 
     // Restore the state of the context
     ctx.restore();

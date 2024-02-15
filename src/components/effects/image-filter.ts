@@ -57,12 +57,13 @@ export class ImageFilter extends Effect {
     ctx.putImageData(imageData, 0, 0);
     const filteredImage = new Image();
     filteredImage.src = canvas.toDataURL();
+    filteredImage.onload = () => {
+      // Override the node's existing image
+      this.#node?.setImage(filteredImage);
 
-    // Override the node's existing image
-    this.#node.setImage(filteredImage);
-
-    // Clear render cache
-    this.#node.clearCache();
+      // Redraw the node
+      this.#node?.redraw();
+    };
   }
 
   applyFilter(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {

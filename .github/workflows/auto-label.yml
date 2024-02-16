@@ -1,0 +1,32 @@
+name: Auto Labeling Issues
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label bug issues
+        uses: actions/github-script@v5
+        if: "startsWith(github.event.issue.title, 'bug:')"
+        with:
+          script: |
+            github.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['bug']
+            })
+      - name: Label feature issues
+        uses: actions/github-script@v5
+        if: "startsWith(github.event.issue.title, 'feat:')"
+        with:
+          script: |
+            github.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['feat']
+            })

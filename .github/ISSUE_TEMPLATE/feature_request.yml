@@ -1,0 +1,31 @@
+name: 💡 Feature Request
+description: Suggest an idea for this project.
+title: "[FEATURE] <description>"
+labels: ["enhancement", "status: awaiting triage"]
+body:
+  - type: checkboxes
+    id: duplicates
+    attributes:
+      label: Is this feature unique?
+      description: Please search both "open" and "closed" issues to make sure this feature has not been suggested before.
+      options:
+        - label: I have checked both "open" and "closed" issues and have not found a similar feature request.
+          required: true
+  - type: textarea
+    attributes:
+      label: Feature Request Description
+      description: Provide a clear and concise description of what you want and why it would be useful.
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other context or screenshots about the feature request here.
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        **We appreciate your suggestions!** 🚀
+        Your input helps Studio grow and improve. Thank you for taking the time to share your ideas.
